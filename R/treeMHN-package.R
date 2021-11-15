@@ -1,5 +1,5 @@
 ## usethis namespace: start
-#' @useDynLib treeMHN, .registration = TRUE
+#' @useDynLib TreeMHN, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
 ## usethis namespace: end
 NULL
