@@ -127,8 +127,9 @@ par(mfrow = c(1,3))
 col.lim.up <- max(max(true_Theta),max(pred_Theta),max(pred_Theta_w_SS))
 col.lim.lo <- min(min(true_Theta),min(pred_Theta),min(pred_Theta_w_SS))
 idx <- order(diag(true_Theta),decreasing = TRUE)
-corrplot(true_Theta[idx,idx], is.corr = FALSE, title = "True MHN",
-         col.lim = c(col.lim.lo,col.lim.up),tl.col = "darkgrey", mar = c(1, 1, 1, 1))
+corrplot(true_Theta[idx,idx], is.corr = FALSE,
+         col.lim = c(col.lim.lo,col.lim.up), 
+         title = "True MHN", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
 ```
 
     ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
@@ -140,8 +141,9 @@ corrplot(true_Theta[idx,idx], is.corr = FALSE, title = "True MHN",
     ## Warning in title(title, ...): "col.lim" is not a graphical parameter
 
 ``` r
-corrplot(pred_Theta[idx,idx], is.corr = FALSE, title = "TreeMHN",
-         col.lim = c(col.lim.lo,col.lim.up),tl.col = "darkgrey", mar = c(1, 1, 1, 1))
+corrplot(pred_Theta[idx,idx], is.corr = FALSE,
+         col.lim = c(col.lim.lo,col.lim.up), 
+         title = "TreeMHN", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
 ```
 
     ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
@@ -153,8 +155,9 @@ corrplot(pred_Theta[idx,idx], is.corr = FALSE, title = "TreeMHN",
     ## Warning in title(title, ...): "col.lim" is not a graphical parameter
 
 ``` r
-corrplot(pred_Theta_w_SS[idx,idx], is.corr = FALSE, title = "TreeMHN with stability selection",
-         col.lim = c(col.lim.lo,col.lim.up),tl.col = "darkgrey", mar = c(1, 1, 1, 1))
+corrplot(pred_Theta_w_SS[idx,idx], is.corr = FALSE,
+         col.lim = c(col.lim.lo,col.lim.up), 
+         title = "TreeMHN with stability selection", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
 ```
 
     ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
@@ -197,7 +200,7 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
     ##     29.00     16.00      0.00     45.00     29.00      1.00      0.36      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.73
+    ##      0.00      0.72
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -223,7 +226,7 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta_w_SS[top_idx,top_idx])
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
     ##      0.00     11.00      0.00      9.00      0.00      1.00      1.00      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.24
+    ##      0.00      0.14
 
 3 Real data
 ===========
