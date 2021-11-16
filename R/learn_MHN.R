@@ -61,6 +61,8 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
   n <- tree_obj$n
   N <- tree_obj$N
   trees <- tree_obj$trees
+  N_patients <- tree_obj$N_patients ## New
+  weights <- tree_obj$weights ## New
   smallest_tree_size <- min(sapply(trees, function (tree) sum(tree$in_tree) - 1))
 
   # initialize Theta
@@ -89,7 +91,7 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
 
       # M-step
       optim_res <- optim(Theta, full_MHN_objective, full_MHN_grad, timed_trees,
-                         gamma, n, N, lambda_s, to_mask, smallest_tree_size,
+                         gamma, n, N, lambda_s, to_mask, weights, N_patients, smallest_tree_size,
                          method = "L-BFGS-B",
                          lower = -10, upper = 10,
                          control = list(fnscale = -1,
@@ -114,7 +116,7 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
     cat("Running MLE...\n")
     obj_grad_help <- obj_grad_helper(n, N, trees, Theta, lambda_s)
     optim_res <- optim(Theta, obs_MHN_objective, obs_MHN_grad, n, N, lambda_s,
-                       trees, gamma, obj_grad_help, to_mask, smallest_tree_size,
+                       trees, gamma, obj_grad_help, to_mask, weights, N_patients, smallest_tree_size,
                        method = "L-BFGS-B",
                        lower = -10, upper = 10,
                        control = list(fnscale = -1,
@@ -210,71 +212,75 @@ get_timed_trees <- function(n, N, trees, Theta, lambda_s, M, MC_flags) {
 
 }
 
-full_MHN_objective <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, smallest_tree_size = 1) {
+full_MHN_objective <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, 
+                               weights, N_patients, smallest_tree_size = 1) {
 
-  score <- full_MHN_objective_(Theta, trees, gamma, n, N, lambda_s, to_mask)
+  score <- full_MHN_objective_(Theta, trees, gamma, n, N, lambda_s, to_mask, weights)
   exp_Theta <- exp(matrix(Theta, nrow = n))
   if (smallest_tree_size == 1) {
     lambdas <- diag(exp_Theta)
-    score <- score - N * log(1 - prob_empty_tree(lambdas, lambda_s))
+    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s))
   }
   if (smallest_tree_size == 2) {
     lambdas <- diag(exp_Theta)
-    score <- score - N * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s))
+    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s))
   }
 
   return(score)
 }
 
-full_MHN_grad <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, smallest_tree_size = 1) {
+full_MHN_grad <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, 
+                          weights, N_patients, smallest_tree_size = 1) {
 
-  gd <- full_MHN_grad_(Theta, trees, gamma, n, N, lambda_s, to_mask)
+  gd <- full_MHN_grad_(Theta, trees, gamma, n, N, lambda_s, to_mask, weights)
   exp_Theta <- exp(matrix(Theta, nrow = n))
   if (smallest_tree_size == 1) {
     lambdas <- diag(exp_Theta)
     p_empty <- prob_empty_tree(lambdas, lambda_s)
-    diag(gd) <- diag(gd) - N * p_empty^2 / lambda_s / (1 - p_empty + 1e-10) * lambdas
+    diag(gd) <- diag(gd) - N_patients * p_empty^2 / lambda_s / (1 - p_empty + 1e-10) * lambdas
   }
   if (smallest_tree_size == 2) {
     lambdas <- diag(exp_Theta)
     p_empty <- prob_empty_tree(lambdas, lambda_s)
     p_one <- prob_one_tree(n, exp_Theta, lambda_s)
-    gd <- gd - N * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
+    gd <- gd - N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
   }
 
   return(gd)
 }
 
-obs_MHN_objective <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, smallest_tree_size = 1) {
+obs_MHN_objective <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, 
+                              weights, N_patients, smallest_tree_size = 1) {
 
-  score <- obs_MHN_objective_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask)
+  score <- obs_MHN_objective_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights)
   exp_Theta <- exp(matrix(Theta, nrow = n))
   if (smallest_tree_size == 1) {
     lambdas <- diag(exp_Theta)
-    score <- score - N * log(1 - prob_empty_tree(lambdas, lambda_s))
+    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s))
   }
   if (smallest_tree_size == 2) {
     lambdas <- diag(exp_Theta)
-    score <- score - N * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s))
+    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s))
   }
 
   return(score)
 }
 
-obs_MHN_grad <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, smallest_tree_size = 1) {
+obs_MHN_grad <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, 
+                         weights, N_patients, smallest_tree_size = 1) {
 
-  gd <- obs_MHN_grad_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask)
+  gd <- obs_MHN_grad_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights)
   exp_Theta <- exp(matrix(Theta, nrow = n))
   if (smallest_tree_size == 1) {
     lambdas <- diag(exp_Theta)
     p_empty <- prob_empty_tree(lambdas, lambda_s)
-    diag(gd) <- diag(gd) - N * p_empty^2 / lambda_s / (1 - p_empty + 1e-10) * lambdas
+    diag(gd) <- diag(gd) - N_patients * p_empty^2 / lambda_s / (1 - p_empty + 1e-10) * lambdas
   }
   if (smallest_tree_size == 2) {
     lambdas <- diag(exp_Theta)
     p_empty <- prob_empty_tree(lambdas, lambda_s)
     p_one <- prob_one_tree(n, exp_Theta, lambda_s)
-    gd <- gd - N * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
+    gd <- gd - N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
   }
 
   return(gd)

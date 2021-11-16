@@ -120,7 +120,7 @@ arma::mat full_tree_grad(arma::mat Theta, int n, const IntegerVector &nodes, con
 
 // [[Rcpp::export]]
 double full_MHN_objective_(NumericVector Theta, const List &trees, double gamma,
-                           int n, int N, double lambda_s, IntegerVector to_mask) {
+                           int n, int N, double lambda_s, IntegerVector to_mask, NumericVector weights) {
 
   double log_score {0};
 
@@ -141,7 +141,8 @@ double full_MHN_objective_(NumericVector Theta, const List &trees, double gamma,
     IntegerVector nodes = tree["nodes"];
     List children = tree["children"];
     NumericVector time_diffs =  tree["time_diffs"];
-    log_score += full_tree_log_score(Theta_, nodes, children, time_diffs);
+    double weight = weights.at(i); //New
+    log_score += weight * full_tree_log_score(Theta_, nodes, children, time_diffs); //New
   }
 
   if (log_score == -R_PosInf) {
@@ -159,7 +160,7 @@ double full_MHN_objective_(NumericVector Theta, const List &trees, double gamma,
 
 // [[Rcpp::export]]
 NumericMatrix full_MHN_grad_(NumericVector Theta, const List &trees, double gamma,
-                             int n, int N, double lambda_s, IntegerVector to_mask) {
+                             int n, int N, double lambda_s, IntegerVector to_mask, NumericVector weights) {
 
   // Convert Theta vector to matrix
   Theta.attr("dim") = Dimension(n, n);
@@ -180,7 +181,8 @@ NumericMatrix full_MHN_grad_(NumericVector Theta, const List &trees, double gamm
     IntegerVector nodes = tree["nodes"];
     List children = tree["children"];
     NumericVector time_diffs =  tree["time_diffs"];
-    Theta_grad += full_tree_grad(Theta_, n, nodes, children, time_diffs);
+    double weight = weights.at(i); //New
+    Theta_grad += weight * full_tree_grad(Theta_, n, nodes, children, time_diffs); //New
   }
 
   NumericMatrix Theta_grad_ = with_l1_penalty_grad(Theta_, gamma, Theta_grad, n);
@@ -196,7 +198,8 @@ NumericMatrix full_MHN_grad_(NumericVector Theta, const List &trees, double gamm
 
 // [[Rcpp::export]]
 double obs_MHN_objective_(NumericVector Theta, int n, int N, double lambda_s,
-                          const List &trees, double gamma, List &obj_grad_help, IntegerVector to_mask) {
+                          const List &trees, double gamma, List &obj_grad_help, 
+                          IntegerVector to_mask, NumericVector weights) {
 
   // Convert Theta vector to matrix
   Theta.attr("dim") = Dimension(n, n);
@@ -221,7 +224,8 @@ double obs_MHN_objective_(NumericVector Theta, int n, int N, double lambda_s,
     arma::sp_mat tr_mat = build_tr_mat(n, Theta_, genotypes, node_labels);
     tr_mat_vec.at(i) = tr_mat;
     double p = compute_obs_ll(tr_mat, lambda_s);
-    log_score += p;
+    double weight = weights.at(i); //New
+    log_score += weight * p; //New
     log_prob_vec.at(i) = p;
   }
   obj_grad_help["tr_mat_vec"] = tr_mat_vec;
@@ -283,7 +287,8 @@ arma::mat obs_tree_grad(const arma::mat Theta, int n, const IntegerVector &nodes
 
 // [[Rcpp::export]]
 NumericMatrix obs_MHN_grad_(NumericVector Theta, int n, int N, double lambda_s,
-                            const List &trees, double gamma, const List &obj_grad_help, IntegerVector to_mask) {
+                            const List &trees, double gamma, const List &obj_grad_help, 
+                            IntegerVector to_mask, NumericVector weights) {
 
   // Convert Theta vector to matrix
   Theta.attr("dim") = Dimension(n, n);
@@ -311,12 +316,13 @@ NumericMatrix obs_MHN_grad_(NumericVector Theta, int n, int N, double lambda_s,
     arma::sp_mat tr_mat = tr_mat_vec.at(i);
     IntegerMatrix genotypes = comp_geno_vec.at(i);
     List node_labels = node_labels_vec.at(i);
+    double weight = weights.at(i); //New
 
     arma::mat temp = obs_tree_grad(Theta_, n, nodes, children, in_tree, tr_mat,
                                    lambda_s, genotypes, node_labels);
 
     double p = log_prob_vec.at(i);
-    Theta_grad += arma::sign(temp) % exp(log(arma::abs(temp)) - p);
+    Theta_grad += weight * arma::sign(temp) % exp(log(arma::abs(temp)) - p); //New
   }
 
   NumericMatrix Theta_grad_ = with_l1_penalty_grad(Theta_, gamma, Theta_grad, n);

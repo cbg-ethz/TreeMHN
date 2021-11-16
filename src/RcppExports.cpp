@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // build_tr_mat
 arma::sp_mat build_tr_mat(int n, arma::mat Theta, const IntegerMatrix& genotypes, const List& node_labels);
 RcppExport SEXP _TreeMHN_build_tr_mat(SEXP nSEXP, SEXP ThetaSEXP, SEXP genotypesSEXP, SEXP node_labelsSEXP) {
@@ -82,8 +87,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // full_MHN_objective_
-double full_MHN_objective_(NumericVector Theta, const List& trees, double gamma, int n, int N, double lambda_s, IntegerVector to_mask);
-RcppExport SEXP _TreeMHN_full_MHN_objective_(SEXP ThetaSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP to_maskSEXP) {
+double full_MHN_objective_(NumericVector Theta, const List& trees, double gamma, int n, int N, double lambda_s, IntegerVector to_mask, NumericVector weights);
+RcppExport SEXP _TreeMHN_full_MHN_objective_(SEXP ThetaSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP to_maskSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -94,13 +99,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< double >::type lambda_s(lambda_sSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type to_mask(to_maskSEXP);
-    rcpp_result_gen = Rcpp::wrap(full_MHN_objective_(Theta, trees, gamma, n, N, lambda_s, to_mask));
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(full_MHN_objective_(Theta, trees, gamma, n, N, lambda_s, to_mask, weights));
     return rcpp_result_gen;
 END_RCPP
 }
 // full_MHN_grad_
-NumericMatrix full_MHN_grad_(NumericVector Theta, const List& trees, double gamma, int n, int N, double lambda_s, IntegerVector to_mask);
-RcppExport SEXP _TreeMHN_full_MHN_grad_(SEXP ThetaSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP to_maskSEXP) {
+NumericMatrix full_MHN_grad_(NumericVector Theta, const List& trees, double gamma, int n, int N, double lambda_s, IntegerVector to_mask, NumericVector weights);
+RcppExport SEXP _TreeMHN_full_MHN_grad_(SEXP ThetaSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP to_maskSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -111,13 +117,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< double >::type lambda_s(lambda_sSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type to_mask(to_maskSEXP);
-    rcpp_result_gen = Rcpp::wrap(full_MHN_grad_(Theta, trees, gamma, n, N, lambda_s, to_mask));
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(full_MHN_grad_(Theta, trees, gamma, n, N, lambda_s, to_mask, weights));
     return rcpp_result_gen;
 END_RCPP
 }
 // obs_MHN_objective_
-double obs_MHN_objective_(NumericVector Theta, int n, int N, double lambda_s, const List& trees, double gamma, List& obj_grad_help, IntegerVector to_mask);
-RcppExport SEXP _TreeMHN_obs_MHN_objective_(SEXP ThetaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP obj_grad_helpSEXP, SEXP to_maskSEXP) {
+double obs_MHN_objective_(NumericVector Theta, int n, int N, double lambda_s, const List& trees, double gamma, List& obj_grad_help, IntegerVector to_mask, NumericVector weights);
+RcppExport SEXP _TreeMHN_obs_MHN_objective_(SEXP ThetaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP obj_grad_helpSEXP, SEXP to_maskSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -129,13 +136,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< List& >::type obj_grad_help(obj_grad_helpSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type to_mask(to_maskSEXP);
-    rcpp_result_gen = Rcpp::wrap(obs_MHN_objective_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask));
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(obs_MHN_objective_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights));
     return rcpp_result_gen;
 END_RCPP
 }
 // obs_MHN_grad_
-NumericMatrix obs_MHN_grad_(NumericVector Theta, int n, int N, double lambda_s, const List& trees, double gamma, const List& obj_grad_help, IntegerVector to_mask);
-RcppExport SEXP _TreeMHN_obs_MHN_grad_(SEXP ThetaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP obj_grad_helpSEXP, SEXP to_maskSEXP) {
+NumericMatrix obs_MHN_grad_(NumericVector Theta, int n, int N, double lambda_s, const List& trees, double gamma, const List& obj_grad_help, IntegerVector to_mask, NumericVector weights);
+RcppExport SEXP _TreeMHN_obs_MHN_grad_(SEXP ThetaSEXP, SEXP nSEXP, SEXP NSEXP, SEXP lambda_sSEXP, SEXP treesSEXP, SEXP gammaSEXP, SEXP obj_grad_helpSEXP, SEXP to_maskSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -147,7 +155,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< const List& >::type obj_grad_help(obj_grad_helpSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type to_mask(to_maskSEXP);
-    rcpp_result_gen = Rcpp::wrap(obs_MHN_grad_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask));
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(obs_MHN_grad_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -206,10 +215,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_TreeMHN_compute_prob_ij", (DL_FUNC) &_TreeMHN_compute_prob_ij, 4},
     {"_TreeMHN_tree_E_step", (DL_FUNC) &_TreeMHN_tree_E_step, 8},
     {"_TreeMHN_tree_importance_sampling", (DL_FUNC) &_TreeMHN_tree_importance_sampling, 7},
-    {"_TreeMHN_full_MHN_objective_", (DL_FUNC) &_TreeMHN_full_MHN_objective_, 7},
-    {"_TreeMHN_full_MHN_grad_", (DL_FUNC) &_TreeMHN_full_MHN_grad_, 7},
-    {"_TreeMHN_obs_MHN_objective_", (DL_FUNC) &_TreeMHN_obs_MHN_objective_, 8},
-    {"_TreeMHN_obs_MHN_grad_", (DL_FUNC) &_TreeMHN_obs_MHN_grad_, 8},
+    {"_TreeMHN_full_MHN_objective_", (DL_FUNC) &_TreeMHN_full_MHN_objective_, 8},
+    {"_TreeMHN_full_MHN_grad_", (DL_FUNC) &_TreeMHN_full_MHN_grad_, 8},
+    {"_TreeMHN_obs_MHN_objective_", (DL_FUNC) &_TreeMHN_obs_MHN_objective_, 9},
+    {"_TreeMHN_obs_MHN_grad_", (DL_FUNC) &_TreeMHN_obs_MHN_grad_, 9},
     {"_TreeMHN_get_augmented_trees", (DL_FUNC) &_TreeMHN_get_augmented_trees, 2},
     {"_TreeMHN_parse_trees", (DL_FUNC) &_TreeMHN_parse_trees, 1},
     {"_TreeMHN_rtexp", (DL_FUNC) &_TreeMHN_rtexp, 3},

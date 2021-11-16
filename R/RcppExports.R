@@ -21,20 +21,20 @@ tree_importance_sampling <- function(Theta, nodes, children, in_tree, n, M, lamb
     .Call(`_TreeMHN_tree_importance_sampling`, Theta, nodes, children, in_tree, n, M, lambda_s)
 }
 
-full_MHN_objective_ <- function(Theta, trees, gamma, n, N, lambda_s, to_mask) {
-    .Call(`_TreeMHN_full_MHN_objective_`, Theta, trees, gamma, n, N, lambda_s, to_mask)
+full_MHN_objective_ <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, weights) {
+    .Call(`_TreeMHN_full_MHN_objective_`, Theta, trees, gamma, n, N, lambda_s, to_mask, weights)
 }
 
-full_MHN_grad_ <- function(Theta, trees, gamma, n, N, lambda_s, to_mask) {
-    .Call(`_TreeMHN_full_MHN_grad_`, Theta, trees, gamma, n, N, lambda_s, to_mask)
+full_MHN_grad_ <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, weights) {
+    .Call(`_TreeMHN_full_MHN_grad_`, Theta, trees, gamma, n, N, lambda_s, to_mask, weights)
 }
 
-obs_MHN_objective_ <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask) {
-    .Call(`_TreeMHN_obs_MHN_objective_`, Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask)
+obs_MHN_objective_ <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights) {
+    .Call(`_TreeMHN_obs_MHN_objective_`, Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights)
 }
 
-obs_MHN_grad_ <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask) {
-    .Call(`_TreeMHN_obs_MHN_grad_`, Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask)
+obs_MHN_grad_ <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights) {
+    .Call(`_TreeMHN_obs_MHN_grad_`, Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights)
 }
 
 get_augmented_trees <- function(n, trees) {
