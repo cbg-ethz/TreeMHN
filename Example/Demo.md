@@ -127,46 +127,16 @@ par(mfrow = c(1,3))
 col.lim.up <- max(max(true_Theta),max(pred_Theta),max(pred_Theta_w_SS))
 col.lim.lo <- min(min(true_Theta),min(pred_Theta),min(pred_Theta_w_SS))
 idx <- order(diag(true_Theta),decreasing = TRUE)
-corrplot(true_Theta[idx,idx], is.corr = FALSE,
-         col.lim = c(col.lim.lo,col.lim.up), 
+corrplot(true_Theta[idx,idx],
+         col.lim = c(col.lim.lo,col.lim.up), is.corr = FALSE, 
          title = "True MHN", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
-```
-
-    ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
-    ## tl.srt, : "col.lim" is not a graphical parameter
-
-    ## Warning in text.default(pos.ylabel[, 1], pos.ylabel[, 2], newrownames, col =
-    ## tl.col, : "col.lim" is not a graphical parameter
-
-    ## Warning in title(title, ...): "col.lim" is not a graphical parameter
-
-``` r
-corrplot(pred_Theta[idx,idx], is.corr = FALSE,
-         col.lim = c(col.lim.lo,col.lim.up), 
+corrplot(pred_Theta[idx,idx],
+         col.lim = c(col.lim.lo,col.lim.up), is.corr = FALSE, 
          title = "TreeMHN", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
-```
-
-    ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
-    ## tl.srt, : "col.lim" is not a graphical parameter
-
-    ## Warning in text.default(pos.ylabel[, 1], pos.ylabel[, 2], newrownames, col =
-    ## tl.col, : "col.lim" is not a graphical parameter
-
-    ## Warning in title(title, ...): "col.lim" is not a graphical parameter
-
-``` r
-corrplot(pred_Theta_w_SS[idx,idx], is.corr = FALSE,
-         col.lim = c(col.lim.lo,col.lim.up), 
+corrplot(pred_Theta_w_SS[idx,idx],
+         col.lim = c(col.lim.lo,col.lim.up), is.corr = FALSE, 
          title = "TreeMHN with stability selection", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
 ```
-
-    ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
-    ## tl.srt, : "col.lim" is not a graphical parameter
-
-    ## Warning in text.default(pos.ylabel[, 1], pos.ylabel[, 2], newrownames, col =
-    ## tl.col, : "col.lim" is not a graphical parameter
-
-    ## Warning in title(title, ...): "col.lim" is not a graphical parameter
 
 ![](Demo_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
