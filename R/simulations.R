@@ -107,19 +107,28 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
   # Add tree IDs
   for (i in c(1:N)) {
     trees[[i]]$tree_ID <- i
+    trees[[i]]$patient_ID <- i ## New
   }
 
-  tree_obj <- list("n" = n,
-                   "N" = N,
-                   "mutations" = mutations,
-                   "tree_labels" = as.character(c(1:N)),
-                   "trees" = trees,
-                   "Theta" = Theta)
+  # tree_obj <- list("n" = n,
+  #                  "N" = N,
+  #                  "mutations" = mutations,
+  #                  "tree_labels" = as.character(c(1:N)),
+  #                  "trees" = trees,
+  #                  "Theta" = Theta)
 
+  # tree_obj <- output_tree_df(tree_obj)
+  # res <- tree_df_to_trees(n, tree_obj$tree_df)
+  # tree_obj$tree_df <- res$tree_df
+  # tree_obj$trees <- res$trees
+  
+  tree_obj <- list("trees" = trees)
   tree_obj <- output_tree_df(tree_obj)
-  res <- tree_df_to_trees(n, tree_obj$tree_df)
-  tree_obj$tree_df <- res$tree_df
-  tree_obj$trees <- res$trees
+  tree_obj <- input_tree_df(n = n, tree_df = tree_obj$tree_df, 
+                            patients = as.character(c(1:N)), 
+                            tree_labels = as.character(c(1:N)),
+                            mutations = mutations)
+  tree_obj$Theta <- Theta
 
   # Perturb tree
   if (perturb) {

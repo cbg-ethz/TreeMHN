@@ -18,5 +18,6 @@ Imports:
     Rgraphviz,
     gtools,
     DiagrammeR,
-    ggplot2
+    ggplot2,
+    dplyr
     
