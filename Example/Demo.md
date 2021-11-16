@@ -3,25 +3,24 @@ is created based on the article “Joint inference of repeated
 evolutionary trajectories and patterns of clonal exclusivity or
 co-occurrence from tumor mutation trees”.
 
-# 1 Load required packages
+1 Load required packages
+========================
 
 ``` r
 library(TreeMHN)
 library(corrplot)
-```
-
-    ## corrplot 0.90 loaded
-
-``` r
 library(parallel)
 library(Matrix)
 library(DiagrammeR)
 library(ggplot2)
+library(dplyr)
 ```
 
-# 2 Simulated data
+2 Simulated data
+================
 
-## 2.1 Generate trees
+2.1 Generate trees
+------------------
 
 The function `generate_trees` can generate a random Mutual Hazard
 Network *Θ* and a set of mutation trees from *Θ* according to the tree
@@ -52,7 +51,8 @@ plot_tree(tree, tree_obj$mutations)
 
 ![](Demo_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
-## 2.2 Learn MHN from the generated trees
+2.2 Learn MHN from the generated trees
+--------------------------------------
 
 The function `learn_MHN` takes a `TreeMHN` object and learns an MHN *Θ̂*.
 
@@ -111,7 +111,8 @@ pred_Theta_w_SS <- learn_MHN(tree_obj, gamma = gamma, to_mask = TreeMHN_to_mask)
     ## Checking whether MCEM is needed...
     ## Running MLE...
 
-## 2.3 Performance assessment
+2.3 Performance assessment
+--------------------------
 
 We first plot the true MHN and the two estimated MHNs by ordering the
 entries based on the true baseline rates. At a regularization level
@@ -128,11 +129,41 @@ col.lim.lo <- min(min(true_Theta),min(pred_Theta),min(pred_Theta_w_SS))
 idx <- order(diag(true_Theta),decreasing = TRUE)
 corrplot(true_Theta[idx,idx], is.corr = FALSE, title = "True MHN",
          col.lim = c(col.lim.lo,col.lim.up),tl.col = "darkgrey", mar = c(1, 1, 1, 1))
+```
+
+    ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
+    ## tl.srt, : "col.lim" is not a graphical parameter
+
+    ## Warning in text.default(pos.ylabel[, 1], pos.ylabel[, 2], newrownames, col =
+    ## tl.col, : "col.lim" is not a graphical parameter
+
+    ## Warning in title(title, ...): "col.lim" is not a graphical parameter
+
+``` r
 corrplot(pred_Theta[idx,idx], is.corr = FALSE, title = "TreeMHN",
          col.lim = c(col.lim.lo,col.lim.up),tl.col = "darkgrey", mar = c(1, 1, 1, 1))
+```
+
+    ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
+    ## tl.srt, : "col.lim" is not a graphical parameter
+
+    ## Warning in text.default(pos.ylabel[, 1], pos.ylabel[, 2], newrownames, col =
+    ## tl.col, : "col.lim" is not a graphical parameter
+
+    ## Warning in title(title, ...): "col.lim" is not a graphical parameter
+
+``` r
 corrplot(pred_Theta_w_SS[idx,idx], is.corr = FALSE, title = "TreeMHN with stability selection",
          col.lim = c(col.lim.lo,col.lim.up),tl.col = "darkgrey", mar = c(1, 1, 1, 1))
 ```
+
+    ## Warning in text.default(pos.xlabel[, 1], pos.xlabel[, 2], newcolnames, srt =
+    ## tl.srt, : "col.lim" is not a graphical parameter
+
+    ## Warning in text.default(pos.ylabel[, 1], pos.ylabel[, 2], newrownames, col =
+    ## tl.col, : "col.lim" is not a graphical parameter
+
+    ## Warning in title(title, ...): "col.lim" is not a graphical parameter
 
 ![](Demo_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
@@ -140,11 +171,11 @@ We can compute the precision and recall (= true positive rate) based on
 the off-diagonal differences using function `compare_Theta`. (See the
 Supplementary Material for more details.)
 
-| *Θ* (left) *Θ̂* (top) | *i*  *j* | *i* → *j* | *i* ⊣ *j* |
-|----------------------|----------|-----------|-----------|
-| *i*  *j*             | TN       | FP        | FP        |
-| *i* → *j*            | FN       | TP        | FP        |
-| *i* ⊣ *j*            | FN       | FP        | TP        |
+| *Θ* (left) *Θ̂* (top) | *i* *j* | *i* → *j* | *i* ⊣ *j* |
+|----------------------|---------|-----------|-----------|
+| *i* *j*              | TN      | FP        | FP        |
+| *i* → *j*            | FN      | TP        | FP        |
+| *i* ⊣ *j*            | FN      | FP        | TP        |
 
 -   Without stability selection:
 
@@ -164,9 +195,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     30.00     15.00      0.00     45.00     30.00      1.00      0.33      0.00 
+    ##     29.00     16.00      0.00     45.00     29.00      1.00      0.36      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.71
+    ##      0.00      0.73
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -192,11 +223,13 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta_w_SS[top_idx,top_idx])
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
     ##      0.00     11.00      0.00      9.00      0.00      1.00      1.00      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.12
+    ##      0.00      0.24
 
-# 3 Real data
+3 Real data
+===========
 
-## 3.1 Input dataset
+3.1 Input dataset
+-----------------
 
 Here we use the tree dataset from [Morita et
 al. (2020)](https://www.nature.com/articles/s41467-020-19119-8).
@@ -229,13 +262,13 @@ For example,
 head(AML$tree_df)
 ```
 
-    ##   Tree_ID Node_ID Mutation_ID Parent_ID
-    ## 1       1       1           0         1
-    ## 2       1       2           1         1
-    ## 3       1       3           2         5
-    ## 4       1       4           3         5
-    ## 5       1       5           4         2
-    ## 6       1       6           5         5
+    ##   Patient_ID Tree_ID Node_ID Mutation_ID Parent_ID
+    ## 1          1       1       1           0         1
+    ## 2          1       1       2           1         1
+    ## 3          1       1       3           2         5
+    ## 4          1       1       4           3         5
+    ## 5          1       1       5           4         2
+    ## 6          1       1       6           5         5
 
 To convert a dataframe to an `TreeMHN` object, use the `input_tree_df`
 function. For example,
@@ -245,7 +278,8 @@ function. For example,
 # input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
 ```
 
-## 3.2 Learn the MHN
+3.2 Learn the MHN
+-----------------
 
 To ensure enough precision, we run stability selection with *γ* = 0.05
 and a threshold of 99% and obtain a vector of non-selected elements over
@@ -276,7 +310,8 @@ AML_Theta <- learn_MHN(AML, gamma = gamma, to_mask = to_mask)
 save(AML_Theta, file = "AML_Theta.RData")
 ```
 
-## 3.3 Plot the network
+3.3 Plot the network
+--------------------
 
 Now we can plot the learned MHN.
 
