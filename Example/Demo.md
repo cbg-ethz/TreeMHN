@@ -84,6 +84,8 @@ subsample_once <- function(subsample_size, tree_obj, gamma) {
   subsample_trees <- sample(tree_obj$trees, subsample_size)
   tree_obj$trees <- subsample_trees
   tree_obj$N <- subsample_size
+  tree_obj$N_patients <- subsample_size
+  tree_obj$weights <- rep(1, subsample_size)
   pred_Theta <- learn_MHN(tree_obj, gamma)
   return(pred_Theta)
 }
@@ -168,9 +170,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     29.00     16.00      0.00     45.00     29.00      1.00      0.36      0.00 
+    ##     30.00     15.00      0.00     45.00     30.00      1.00      0.33      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.72
+    ##      0.00      0.71
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -196,7 +198,7 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta_w_SS[top_idx,top_idx])
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
     ##      0.00     11.00      0.00      9.00      0.00      1.00      1.00      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.14
+    ##      0.00      0.12
 
 3 Real data
 ===========

@@ -68,6 +68,8 @@ subsample_once <- function(subsample_size, tree_obj, gamma) {
   subsample_trees <- sample(tree_obj$trees, subsample_size)
   tree_obj$trees <- subsample_trees
   tree_obj$N <- subsample_size
+  tree_obj$N_patients <- subsample_size
+  tree_obj$weights <- rep(1, subsample_size)
   pred_Theta <- learn_MHN(tree_obj, gamma)
   return(pred_Theta)
 }
