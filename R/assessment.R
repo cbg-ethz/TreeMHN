@@ -1,10 +1,11 @@
 require(gtools)
 
-##' compare_Theta(true_Theta, pred_Theta, q)
-##' This function computes the differences between two Mutual Hazard Networks
-##' @param true_Theta A ground truth MHN represented by a square matrix
-##' @param pred_Theta An estimated MHN represented by a square matrix
-##' @param q A threshold to zero out very small entries in the estimated MHN (Default: 1e-2)
+##' @name compare_Theta
+##' @title Compute the differences between two Mutual Hazard Networks
+##' @description This function computes the differences between two Mutual Hazard Networks.
+##' @param true_Theta A ground truth MHN represented by a square matrix.
+##' @param pred_Theta An estimated MHN represented by a square matrix.
+##' @param q A threshold to zero out very small entries in the estimated MHN (Default: 1e-2).
 ##' @return A vector of performance metrics:
 ##' \itemize{
 ##' \item SHD: Structural Hamming Distance between the two matrices;
@@ -88,12 +89,13 @@ compare_Theta <- function(true_Theta, pred_Theta, q = 1e-2) {
 
 }
 
-##' Theta_to_pathways(Theta, n_order, prob_only)
-##' This function computes the pathway probabilities given a Mutual Hazard Network
-##' @param Theta An MHN represented by a square matrix
-##' @param n_order Length of the pathways (Default: 4)
+##' @name Theta_to_pathways
+##' @title Compute the pathway probabilities given a Mutual Hazard Network
+##' @description This function computes the pathway probabilities given a Mutual Hazard Network.
+##' @param Theta An MHN represented by a square matrix.
+##' @param n_order Length of the pathways (Default: 4).
 ##' @param prob_only A Boolean value that determines whether to output only the pathway probabilities
-##' or the data frame containing also the pathways (Default: TRUE)
+##' or the data frame containing also the pathways (Default: TRUE).
 ##' @return Pathway probabilities
 ##' @author Xiang Ge Luo
 ##' @export
@@ -151,10 +153,11 @@ Theta_to_pathways <- function(Theta, n_order = 4, prob_only = TRUE) {
 
 }
 
-##' KL_divergence(p, q)
-##' This function computes the KL divergence between two probability distributions
-##' @param p A probability distribution
-##' @param q Another probability distribution
+##' @name KL_divergence
+##' @title Compute the KL divergence between two probability distributions
+##' @description This function computes the KL divergence between two probability distributions.
+##' @param p A probability distribution.
+##' @param q Another probability distribution.
 ##' @return KL(p || q)
 ##' @export
 KL_divergence <- function(p, q) {
@@ -172,9 +175,8 @@ KL_divergence <- function(p, q) {
 ##' other mutation IDs can be duplicated in the tree to allow for parallel mutations
 ##' \item Parent_ID: IDs of the parent node ID. The root node has itself as parent (ID "1").
 ##' }
-##' @return Row-normalized W matrix of the REVOLVER algorithm
+##' @return Row-normalized W matrix of the REVOLVER algorithm.
 ##' @author Xiang Ge Luo
-##' @export
 trees_to_revolver_W <- function(n, tree_df) {
 
   W <- matrix(0, nrow = n + 1, ncol = n + 1) # This matrix contains also the wild type (GL)
@@ -193,10 +195,11 @@ trees_to_revolver_W <- function(n, tree_df) {
 
 }
 
-##' get_revolver_pathways(n, tree_df, n_order)
-##' This function computes the pathway probabilities inferred from the
+##' @name get_revolver_pathways
+##' @title Compute REVOLVER pathway probabilities
+##' @description This function computes the pathway probabilities inferred from the
 ##' row-normalized W matrix of the REVOLVER algorithm
-##' @param n Number of mutational events
+##' @param n Number of mutational events.
 ##' @param tree_df A data frame with the following columns:
 ##' \itemize{
 ##' \item Tree_ID: IDs of mutation trees, unique for each patient
@@ -205,8 +208,8 @@ trees_to_revolver_W <- function(n, tree_df) {
 ##' other mutation IDs can be duplicated in the tree to allow for parallel mutations
 ##' \item Parent_ID: IDs of the parent node ID. The root node has itself as parent (ID "1").
 ##' }
-##' @param n_order Length of the pathways (Default: 4)
-##' @return Pathway probabilities inferred from the row-normalized W matrix of the REVOLVER algorithm
+##' @param n_order Length of the pathways (Default: 4).
+##' @return Pathway probabilities inferred from the row-normalized W matrix of the REVOLVER algorithm.
 ##' @author Xiang Ge Luo
 ##' @export
 get_revolver_pathways <- function(n, tree_df, n_order = 4) {
@@ -229,10 +232,11 @@ get_revolver_pathways <- function(n, tree_df, n_order = 4) {
 
 }
 
-##' get_hintra_pathways(n, tree_df, n_order)
-##' This function computes the pathway probabilities inferred from the
-##' row-normalized beta matrix of the HINTRA algorithm
-##' @param n Number of mutational events
+##' @name get_hintra_pathways
+##' @title Compute HINTRA pathway probabilities
+##' @description This function computes the pathway probabilities inferred from the
+##' row-normalized beta matrix of the HINTRA algorithm.
+##' @param n Number of mutational events.
 ##' @param tree_df A data frame with the following columns:
 ##' \itemize{
 ##' \item Tree_ID: IDs of mutation trees, unique for each patient
@@ -241,8 +245,8 @@ get_revolver_pathways <- function(n, tree_df, n_order = 4) {
 ##' other mutation IDs can be duplicated in the tree to allow for parallel mutations
 ##' \item Parent_ID: IDs of the parent node ID. The root node has itself as parent (ID "1").
 ##' }
-##' @param n_order Length of the pathways (Default: 4)
-##' @return Pathway probabilities inferred from the row-normalized beta matrix of the HINTRA algorithm
+##' @param n_order Length of the pathways (Default: 4).
+##' @return Pathway probabilities inferred from the row-normalized beta matrix of the HINTRA algorithm.
 ##' @author Xiang Ge Luo
 ##' @export
 get_hintra_pathways <- function(n, tree_df, n_order = 4) {

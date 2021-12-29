@@ -2,29 +2,50 @@
 % Please edit documentation in R/simulations.R
 \name{generate_trees}
 \alias{generate_trees}
-\title{generate_trees(n):
-a function that generates mutation trees according an MHN}
+\title{Generate a set of trees based on a Mutual Hazard Network}
 \usage{
 generate_trees(
   n = 10,
-  N = 1,
+  N = 100,
   lambda_s = 1,
   Theta = NULL,
   sparsity = 0.5,
-  mutations = NULL
+  exclusive_ratio = 0.5,
+  non_empty = TRUE,
+  mutations = NULL,
+  perturb = FALSE,
+  epsilon = 0.05
 )
 }
 \arguments{
-\item{n:}{number of mutations being considered}
+\item{n}{Number of mutational events (Default: 10).}
 
-\item{N:}{number of trees being generated (default: 1)}
+\item{N}{Number of trees (Default: 100).}
 
-\item{model_par:}{list of model parameters}
+\item{lambda_s}{The rate of the sampling event (Default: 1).}
+
+\item{Theta}{A mutual hazard network (Default: NULL for the function to generate).}
+
+\item{sparsity}{Percentage of off diagonal elements with a value of zero in the MHN (Default: 0.5).}
+
+\item{exclusive_ratio}{Percentage of non-zero elements that are negative,
+meaning that one mutation is inhibiting another mutation (Default: 0.9).}
+
+\item{non_empty}{A flag for the function to generate non-empty trees only (Default: TRUE).}
+
+\item{mutations}{A list of mutation names, which must be unique values (Default: NULL).}
+
+\item{perturb}{A flag for the function to perturb the generated tree structures (Default: FALSE).}
+
+\item{epsilon}{Noise level for perturbing the trees (Default: 0.05).}
 }
 \value{
-a list of trees
+A treeMHN object with the true MHN for generating the trees
 }
 \description{
-generate_trees(n):
-a function that generates mutation trees according an MHN
+This function generate a set of trees based on an MHN, which is either
+provided by the user or generated randomly within the function.
+}
+\author{
+Xiang Ge Luo
 }

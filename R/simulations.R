@@ -8,8 +8,7 @@
 ##' @return An n-by-n matrix representing the MHN
 ##' @author Rudolf Schill, Xiang Ge Luo
 ##' @references Schill et al. (2020). Modelling cancer progression using Mutual Hazard Networks. Bioinformatics, 36(1), 241–249.
-##' @export
-random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5, sim_setup = 1) {
+random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
   Theta  <- matrix(0, nrow=n, ncol=n)
 
   diag(Theta)  <- NA
@@ -19,46 +18,50 @@ random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5, sim_setup = 1
   cooccur <- setdiff(nonZeros, exclusive)
 
   # Parameters (can change)
-  switch(as.character(sim_setup),
-         "1" = {
-           # Setup 1: hyper parameters estimated from real data
-           diag(Theta) <- sample(c(runif(ceiling(n/2), -3, -1), runif(floor(n/2), -6, -3)))
-           Theta[exclusive] <- - rgamma(length(exclusive), 4, 2.5)
-           Theta[cooccur] <- rgamma(length(cooccur), 4, 2.5)
-         },
-         "2" = {
-           # Setup 2:
-           diag(Theta) <- sort(rnorm(100,-2,1))[c(1:n)]
-           temp <- rnorm(length(nonZeros),0,3)
-           Theta[nonZeros] <- sapply(temp, function (x) ifelse(abs(x) > 0.1, x, runif(1,0.1,1) * sign(x)))
-         })
+  diag(Theta) <- sample(c(runif(ceiling(n/2), -3, -1), runif(floor(n/2), -6, -3)))
+  Theta[exclusive] <- - rgamma(length(exclusive), 4, 2.5)
+  Theta[cooccur] <- rgamma(length(cooccur), 4, 2.5)
+  # switch(as.character(sim_setup),
+  #        "1" = {
+  #          # Setup 1: hyper parameters estimated from real data
+  #          diag(Theta) <- sample(c(runif(ceiling(n/2), -3, -1), runif(floor(n/2), -6, -3)))
+  #          Theta[exclusive] <- - rgamma(length(exclusive), 4, 2.5)
+  #          Theta[cooccur] <- rgamma(length(cooccur), 4, 2.5)
+  #        },
+  #        "2" = {
+  #          # Setup 2:
+  #          diag(Theta) <- sort(rnorm(100,-2,1))[c(1:n)]
+  #          temp <- rnorm(length(nonZeros),0,3)
+  #          Theta[nonZeros] <- sapply(temp, function (x) ifelse(abs(x) > 0.1, x, runif(1,0.1,1) * sign(x)))
+  #        })
 
   return(round(Theta, 2))
 }
 
-##' generate_trees(n, N, lambda_s, Theta, sparsity, exclusive_ratio, non_empty)
-##' This function generate a set of trees based on an MHN, which is either
+##' @name generate_trees
+##' @title Generate a set of trees based on a Mutual Hazard Network
+##' @description This function generate a set of trees based on an MHN, which is either
 ##' provided by the user or generated randomly within the function.
-##' @param n Number of mutational events (Default: 10)
-##' @param N Number of trees (Default: 100)
-##' @param lambda_s The rate of the sampling event. (Default: 1)
-##' @param Theta A mutual hazard network. (Default: NULL for the function to generate)
-##' @param sparsity Percentage of off diagonal elements with a value of zero in the MHN. (Default: 0.5)
+##' @param n Number of mutational events (Default: 10).
+##' @param N Number of trees (Default: 100).
+##' @param lambda_s The rate of the sampling event (Default: 1).
+##' @param Theta A mutual hazard network (Default: NULL for the function to generate).
+##' @param sparsity Percentage of off diagonal elements with a value of zero in the MHN (Default: 0.5).
 ##' @param exclusive_ratio Percentage of non-zero elements that are negative,
-##' meaning that one mutation is inhibiting another mutation. (Default: 0.9)
-##' @param non_empty A flag for the function to generate non-empty trees only. (Default: TRUE)
-##' @param mutations A list of mutation names, which must be unique values. (Default: NULL)
-##' @param perturb A flag for the function to perturb the generated tree structures (Default: FALSE)
-##' @param epsilon Noise level for perturbing the trees
+##' meaning that one mutation is inhibiting another mutation (Default: 0.9).
+##' @param non_empty A flag for the function to generate non-empty trees only (Default: TRUE).
+##' @param mutations A list of mutation names, which must be unique values (Default: NULL).
+##' @param perturb A flag for the function to perturb the generated tree structures (Default: FALSE).
+##' @param epsilon Noise level for perturbing the trees (Default: 0.05).
 ##' @return A treeMHN object with the true MHN for generating the trees
 ##' @author Xiang Ge Luo
 ##' @export
 generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
                            sparsity = 0.5, exclusive_ratio = 0.5, non_empty = TRUE,
-                           mutations = NULL, perturb = FALSE, epsilon = 0.05, sim_setup = 1) {
+                           mutations = NULL, perturb = FALSE, epsilon = 0.05) {
 
   if (is.null(Theta)) {
-    Theta <- random_Theta(n, sparsity, exclusive_ratio, sim_setup)
+    Theta <- random_Theta(n, sparsity, exclusive_ratio)
   } else if (nrow(Theta) != n) {
     stop("The dimension of the provided MHN is different from n. Please check again...")
   }
@@ -110,18 +113,6 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
     trees[[i]]$patient_ID <- i ## New
   }
 
-  # tree_obj <- list("n" = n,
-  #                  "N" = N,
-  #                  "mutations" = mutations,
-  #                  "tree_labels" = as.character(c(1:N)),
-  #                  "trees" = trees,
-  #                  "Theta" = Theta)
-
-  # tree_obj <- output_tree_df(tree_obj)
-  # res <- tree_df_to_trees(n, tree_obj$tree_df)
-  # tree_obj$tree_df <- res$tree_df
-  # tree_obj$trees <- res$trees
-  
   tree_obj <- list("trees" = trees)
   tree_obj <- output_tree_df(tree_obj)
   tree_obj <- input_tree_df(n = n, tree_df = tree_obj$tree_df, 

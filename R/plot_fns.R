@@ -1,11 +1,12 @@
 require(DiagrammeR)
 require(ggplot2)
 
-##' plot_tree(tree, mutations, tree_label)
-##' This function plot a tree with a named list format
-##' @param tree A tree with a named list format
-##' @param mutations A list of mutation names corresponding to the mutation IDs
-##' @param tree_label The title of the tree (Default: NULL)
+##' @name plot_tree
+##' @title Plot a tree
+##' @description This function plots a tree in named list format.
+##' @param tree A tree in named list format.
+##' @param mutations A list of mutation names corresponding to the mutation IDs.
+##' @param tree_label The title of the tree (Default: NULL).
 ##' @author Xiang Ge Luo
 ##' @export
 plot_tree <- function(tree, mutations, tree_label = NULL) {
@@ -45,6 +46,17 @@ plot_tree <- function(tree, mutations, tree_label = NULL) {
 
 }
 
+##' @name plot_pathways
+##' @title Plot most probable pathways of a given length computed from a Mutual Hazard Network
+##' @description This function takes a Mutual Hazard Network as input and plot the most probable
+##' mutational pathways of a given length.
+##' @param Theta An n-by-n matrix representing a Mutual Hazard Network
+##' @param mutations A list of mutation names, which must be unique values.
+##' If no names are given, then the mutation IDs will be used.
+##' @param n_order The length of the pathways (Default: 4).
+##' @param top_M Number of most probable pathways to plot (Default: 10).
+##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
+##' @author Xiang Ge Luo
 ##' @export
 plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2 = TRUE) {
 
@@ -91,6 +103,16 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 
 }
 
+##' @name next_mutation
+##' @title Plot the next most probable mutational events
+##' @description Given a particular tree and a Mutual Hazard Network, this function 
+##' finds the next most probable mutational events.
+##' @param n Number of mutational events.
+##' @param tree A tree in named list format.
+##' @param mutations A list of mutation names, which must be unique values.
+##' If no names are given, then the mutation IDs will be used.
+##' @param tree_label The title of the tree (Default: NULL).
+##' @param top_M Number of most probable mutational events to plot (Default: 1).
 ##' @export
 next_mutation <- function(n, tree, Theta, mutations = NULL, tree_label = NULL, top_M = 1) {
 

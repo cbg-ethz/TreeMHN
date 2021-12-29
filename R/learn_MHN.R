@@ -38,8 +38,9 @@ initialize_Theta <- function(n, N, trees, lambda_s) {
   return(initial_Theta)
 }
 
-##' learn_MHN(tree_obj, gamma, lambda_s, Theta_init, M, iterations, to_mask, use_EM, verbose)
-##' This function learns a Mutual Hazard Network from a set of mutation trees
+##' @name learn_MHN
+##' @title Learn a Mutual Hazard Network from a set of mutation trees
+##' @description This function learns a Mutual Hazard Network from a set of mutation trees
 ##' in the format of a TreeMHN object
 ##' @param tree_obj A TreeMHN object
 ##' @param gamma Penalization parameter in the objective function (Default: 0.5)

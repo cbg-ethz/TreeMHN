@@ -1,7 +1,8 @@
 
-##' input_tree_df(n, tree_df, mutations, tree_labels)
-##' This function processes a data frame of mutation trees and output a TreeMHN object
-##' @param n Number of mutational events
+##' @name input_tree_df
+##' @title Process a dataframe of mutation trees and output a TreeMHN object
+##' @description  This function processes a dataframe of mutation trees and output a TreeMHN object.
+##' @param n Number of mutational events.
 ##' @param tree_df A data frame with the following columns:
 ##' \itemize{
 ##' \item Patient_ID: IDs of patients, unique for each patient
