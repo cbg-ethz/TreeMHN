@@ -15,8 +15,9 @@ LinkingTo:
 Imports: 
     Rcpp,
     Matrix,
-    Rgraphviz,
     gtools,
     DiagrammeR,
     ggplot2,
     dplyr
+biocViews:
+    Rgraphviz
