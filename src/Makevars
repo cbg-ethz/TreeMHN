@@ -1,7 +1,8 @@
 
 
-CXX = g++-10
-CXX11 = g++-10
+CXX = g++
+CXX11 = g++
+CXX_STD = g++
 PKG_CXXFLAGS = -std=gnu++17
 PKG_LIBS = -lstdc++fs
 
