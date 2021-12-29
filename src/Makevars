@@ -1,0 +1,6 @@
+
+
+CXX_STD = CXX11
+PKG_CXXFLAGS = -std=gnu++17
+PKG_LIBS = -lstdc++fs
+
