@@ -107,9 +107,13 @@ Theta_to_pathways <- function(Theta, n_order = 4, prob_only = TRUE) {
   }
   pathways <- gtools::permutations(n, n_order)
   temp <- matrix(0, nrow = nrow(pathways), ncol = n_order)
-  temp[,1] <- sapply(c(1:n), function (i) rep(exp(Theta[i,i]),
-                                              prod(sapply(c(0:(n_order - 2)),
-                                                          function (j) (n - 1 - j)))))
+  if (n_order == 1) {
+    temp[,1] <- sapply(c(1:n), function (i) exp(Theta[i,i]))
+  } else {
+    temp[,1] <- sapply(c(1:n), function (i) rep(exp(Theta[i,i]),
+                                                prod(sapply(c(0:(n_order - 2)),
+                                                            function (j) (n - 1 - j)))))
+  }
   temp[,1] <- temp[,1] / sum(exp(diag(Theta)))
   exp_time <- matrix(0, nrow = nrow(pathways), ncol = n_order)
   exp_time[,1] <- 1 / sum(exp(diag(Theta)))

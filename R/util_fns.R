@@ -118,6 +118,3 @@ check_mutations <- function(n, trees) {
 }
 
 
-
-
-
