@@ -72,19 +72,21 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
   }
   pathways <- Theta_to_pathways(Theta, n_order = n_order, prob_only = FALSE)
   pathways <- pathways[c(1:top_M),]
-  pathways[,c((n_order+2):(2*n_order+1))] <- t(apply(pathways[,c((n_order+2):(2*n_order+1))],1,cumsum))
+  if(n_order > 1) {
+    pathways[,c((n_order+2):(2*n_order+1))] <- t(apply(pathways[,c((n_order+2):(2*n_order+1))],1,cumsum))
+  }
   pathways$prob <- pathways$prob*100
   waiting_time <- c()
   probability <- c()
   labels <- c()
   for (i in c(1:n_order)) {
     waiting_time <- c(waiting_time, pathways[,(i + n_order + 1)])
-    probability <- c(probability, paste0(round(pathways$prob,3),"%"))
+    probability <- c(probability, round(pathways$prob, 3))
     labels <- c(labels, mutations[pathways[,i]])
   }
   df <- data.frame(waiting_time,probability,labels)
 
-  g <- ggplot(df, aes(x = waiting_time, y = factor(probability), label = labels)) +
+  g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
     geom_label(aes(fill = factor(labels))) +
     xlab("Expected waiting time relative to the sampling rate") + ylab("Probability") +
     theme_classic() + guides(fill="none") +
@@ -93,7 +95,8 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
           axis.title = element_text(size=16),
           axis.text = element_text(size=14),
           legend.text = element_text(size=16),
-          legend.title = element_text(size=16))
+          legend.title = element_text(size=16)) +
+    scale_y_discrete(labels=sapply(sort(pathways$prob), function(x) paste0(round(x, 3), "%")))
 
   if (log2) {
     g <- g + scale_x_continuous(trans='log2')
