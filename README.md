@@ -22,7 +22,7 @@ For Mac users, please compile the package with g++ instead of clang by installin
 brew install gcc
 ```
 
-and creating `~/.R/Makevars` with entries
+and creating `~/.R/Makevars` with entry
 
 ```
 CXX=g++-11
