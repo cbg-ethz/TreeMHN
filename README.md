@@ -16,7 +16,7 @@ Option 2: In R, install the `devtools` package and run
 devtools::install_github("cbg-ethz/TreeMHN")
 ```
 
-For Mac users, please compile the package with gcc/g++ instead of clang by installing gcc using [Homebrew](https://formulae.brew.sh/formula/gcc)
+For Mac users, please compile the package with g++ instead of clang by installing gcc using [Homebrew](https://formulae.brew.sh/formula/gcc)
 
 ```
 brew install gcc
@@ -25,7 +25,6 @@ brew install gcc
 and creating `~/.R/Makevars` with entries
 
 ```
-CC=gcc-11
 CXX=g++-11
 ```
 
