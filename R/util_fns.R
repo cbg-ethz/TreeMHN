@@ -1,3 +1,4 @@
+##' @import Matrix
 obj_grad_helper <- function(n, N, trees, Theta, lambda_s) {
   tr_mat_vec <- list()
   comp_geno_vec <- list()
@@ -82,6 +83,7 @@ get_node_labels <- function(poset) {
   }
 }
 
+##' @import ggm
 build_poset <- function(tree) {
   in_tree_idx <- which(tree$in_tree)[-1]
   nodes_in_tree <- tree$nodes[in_tree_idx]
