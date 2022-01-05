@@ -1,4 +1,3 @@
-require(gtools)
 
 ##' @name compare_Theta
 ##' @title Compute the differences between two Mutual Hazard Networks
@@ -98,6 +97,7 @@ compare_Theta <- function(true_Theta, pred_Theta, q = 1e-2) {
 ##' or the data frame containing also the pathways (Default: TRUE).
 ##' @return Pathway probabilities
 ##' @author Xiang Ge Luo
+##' @import gtools
 ##' @export
 Theta_to_pathways <- function(Theta, n_order = 4, prob_only = TRUE) {
 
@@ -105,7 +105,7 @@ Theta_to_pathways <- function(Theta, n_order = 4, prob_only = TRUE) {
   if (n < n_order) {
     stop("The number of mutations is smaller than the order. Please check again...")
   }
-  pathways <- gtools::permutations(n, n_order)
+  pathways <- permutations(n, n_order)
   temp <- matrix(0, nrow = nrow(pathways), ncol = n_order)
   if (n_order == 1) {
     temp[,1] <- sapply(c(1:n), function (i) exp(Theta[i,i]))
@@ -312,7 +312,100 @@ get_hintra_pathways <- function(n, tree_df, n_order = 4) {
 
 }
 
+get_children <- function(n, pathway) {
+  
+  nr_ch <- n - length(pathway)
+  to_add <- setdiff(c(1:n), pathway) 
+  pathways <- vector("list", nr_ch)
+  if (nr_ch > 0) {
+    for (i in c(1:nr_ch)) {
+      pathways[[i]] <- c(pathway, to_add[i])
+    }
+  }
+  return(pathways)
+  
+}
 
+Theta_to_pathways_w_sampling <- function(Theta, top_M = 10, lambda_s = 1) {
+  
+  n <- nrow(Theta)
+  pathways <- vector("list", top_M)
+  probs <- rep(0, top_M)
+  
+  current_pathways <- as.list(c(1:n))
+  while (length(current_pathways) > 0) {
+    
+    next_pathways <- list()
+    for (p in current_pathways) {
+      p_prob <- 1
+      for (i in c(1:length(p))) {
+        pp <- p[c(1:i)]
+        num <- TreeMHN:::get_lambda(pp, Theta)
+        denom_set <- get_children(n, pp[-length(pp)])
+        denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
+        p_prob <- p_prob * num / denom
+      }
+      # times the probability of the pathway stopping at the sampling event
+      p_ch <- get_children(n, p)
+      if (length(p_ch) > 0) {
+        p_prob <- p_prob * lambda_s / (lambda_s + sum(sapply(p_ch, function (l) TreeMHN:::get_lambda(l, Theta)))) 
+      }
+      if (p_prob > min(probs)) {
+        to_replace <- which.min(probs)
+        pathways[[to_replace]] <- p
+        probs[to_replace] <- p_prob
+        next_pathways <- append(next_pathways, p_ch)
+      }
+    }
+    current_pathways <- next_pathways
+    
+  }
+  
+  probs <- probs / (1 - lambda_s / (lambda_s + sum(exp(diag(Theta)))))
+  pathways <- sapply(pathways, function (x) paste(x, collapse = "_"))
+  df <- data.frame(pathways, probs) %>% arrange(desc(probs))
+  return(df)
+  
+}
 
+pathway_helper <- function(tree, index = 1, pathway = character(0)) {
+  
+  ch_set <- tree$children[[index]]
+  ch_set <- ch_set[tree$in_tree[ch_set]]
+  
+  if (index != 1) {
+    if (length(pathway) == 0) {
+      pathway <- as.character(tree$nodes[index])
+    } else {
+      pathway <- paste(pathway, tree$nodes[index], sep = "_")
+    }
+  }
+  
+  if (length(ch_set) == 0) {
+    return(pathway)
+  } else {
+    return(sapply(ch_set, function(ch) pathway_helper(tree, ch, pathway)))
+  }
+  
+}
 
+##' @import dplyr
+get_observed_pathways <- function(tree_obj) {
+  
+  pathways <- c()
+  
+  for (tree in tree_obj$trees) {
+    pathways <- c(pathways, unlist(pathway_helper(tree)))
+  }
+  
+  df <- data.frame(pathways) %>% 
+    group_by_all() %>%
+    summarise(count = n()) %>%
+    mutate(probs = count / sum(count)) %>%
+    arrange(desc(count)) %>%
+    select(!count)
+  
+  return(df)
+  
+}
 

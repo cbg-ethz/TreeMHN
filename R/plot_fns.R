@@ -1,5 +1,3 @@
-require(DiagrammeR)
-require(ggplot2)
 
 ##' @name plot_tree
 ##' @title Plot a tree
@@ -8,6 +6,7 @@ require(ggplot2)
 ##' @param mutations A list of mutation names corresponding to the mutation IDs.
 ##' @param tree_label The title of the tree (Default: NULL).
 ##' @author Xiang Ge Luo
+##' @import DiagrammeR
 ##' @export
 plot_tree <- function(tree, mutations, tree_label = NULL) {
 
@@ -57,6 +56,7 @@ plot_tree <- function(tree, mutations, tree_label = NULL) {
 ##' @param top_M Number of most probable pathways to plot (Default: 10).
 ##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
 ##' @author Xiang Ge Luo
+##' @import ggplot2
 ##' @export
 plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2 = TRUE) {
 
@@ -163,4 +163,120 @@ next_mutation <- function(n, tree, Theta, mutations = NULL, tree_label = NULL, t
   g <- plot_tree(new_tree,mutations,tree_label)
   return(g)
 
+}
+
+
+##' @name plot_pathways_w_sampling
+##' @title Plot most probable pathways before a sampling event computed from a Mutual Hazard Network
+##' @description This function takes a Mutual Hazard Network as input and plot the most probable
+##' mutational pathways before a sampling event.
+##' @param Theta An n-by-n matrix representing a Mutual Hazard Network.
+##' @param mutations A list of mutation names, which must be unique values.
+##' If no names are given, then the mutation IDs will be used.
+##' @param top_M Number of most probable pathways to plot (Default: 10).
+##' @param lambda_s Sampling rate (Default: 1)
+##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
+##' @author Xiang Ge Luo
+##' @import ggplot2
+##' @export
+plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, log2 = TRUE) {
+  
+  n <- nrow(Theta)
+  pathway_df <- Theta_to_pathways_w_sampling(Theta, top_M, lambda_s)
+  pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.001) # Avoid overlapping labels
+  
+  waiting_time <- c()
+  probability <- c()
+  labels <- c()
+  for (i in c(1:top_M)) {
+    p <- as.integer(unlist(strsplit(pathway_df$pathways[i], "_")))
+    labels <- c(labels, mutations[p])
+    probability <- c(probability, rep(pathway_df$probs[i], length(p)))
+    times <- rep(0, length(p))
+    for (j in c(1:length(p))) {
+      pp <- p[c(1:j)]
+      denom_set <- get_children(n, pp[-length(pp)])
+      denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
+      times[j] <- 1 / denom
+    }
+    waiting_time <- c(waiting_time, cumsum(times))
+  }
+  
+  df <- data.frame(waiting_time, probability, labels)
+  
+  g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
+    geom_label(aes(fill = factor(labels))) +
+    xlab("Expected waiting time relative to the sampling rate") + ylab("Probability") +
+    theme_classic() + guides(fill="none") +
+    theme(axis.line.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title = element_text(size=16),
+          axis.text = element_text(size=14),
+          legend.text = element_text(size=16),
+          legend.title = element_text(size=16)) +
+    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%")))
+  
+  if (log2) {
+    g <- g + scale_x_continuous(trans='log2')
+  }
+  
+  return(g)
+}
+
+
+##' @name plot_observed_pathways
+##' @title Plot most frequent observed pathways from a cohort of mutation trees
+##' @description This function takes a cohort of mutation trees and the estimated
+##' Mutual Hazard Network as input and plot the most frequent observed pathways.
+##' @param tree_obj A TreeMHN object.
+##' @param Theta An n-by-n matrix representing a Mutual Hazard Network.
+##' @param top_M Number of most frequent pathways to plot (Default: 10).
+##' @param lambda_s Sampling rate (Default: 1)
+##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
+##' @author Xiang Ge Luo
+##' @import ggplot2
+##' @export
+plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, log2 = TRUE) {
+  
+  n <- nrow(Theta)
+  mutations <- tree_obj$mutations
+  pathway_df <- get_observed_pathways(tree_obj)[c(1:top_M),]
+  pathway_df$probs <- pathway_df$probs*100 
+  
+  waiting_time <- c()
+  probability <- c()
+  labels <- c()
+  for (i in c(1:top_M)) {
+    p <- as.integer(unlist(strsplit(pathway_df$pathways[i], "_")))
+    labels <- c(labels, mutations[p])
+    probability <- c(probability, rep(pathway_df$probs[i] + rnorm(1, sd = 0.001), length(p))) # Avoid overlapping labels
+    times <- rep(0, length(p))
+    for (j in c(1:length(p))) {
+      pp <- p[c(1:j)]
+      denom_set <- get_children(n, pp[-length(pp)])
+      denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
+      times[j] <- 1 / denom
+    }
+    waiting_time <- c(waiting_time, cumsum(times))
+  }
+  
+  df <- data.frame(waiting_time, probability, labels)
+  
+  g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
+    geom_label(aes(fill = factor(labels))) +
+    xlab("Expected waiting time relative to the sampling rate") + ylab("Probability") +
+    theme_classic() + guides(fill="none") +
+    theme(axis.line.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title = element_text(size=16),
+          axis.text = element_text(size=14),
+          legend.text = element_text(size=16),
+          legend.title = element_text(size=16)) +
+    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%")))
+  
+  if (log2) {
+    g <- g + scale_x_continuous(trans='log2')
+  }
+  
+  return(g)
 }
