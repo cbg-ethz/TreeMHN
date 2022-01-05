@@ -4,13 +4,7 @@ This package implements the TreeMHN model for the joint inference of repeated ev
 
 ## Installation
 
-Option 1: Using the command line, navigate to the cloned repository and run
-
-```
-R CMD INSTALL TreeMHN_0.1.0.tar.gz
-```
-
-Option 2: In R, install the `devtools` package and run
+In R, install the `devtools` package and run
 
 ```
 devtools::install_github("cbg-ethz/TreeMHN")
