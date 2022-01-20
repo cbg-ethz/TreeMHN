@@ -2,5 +2,5 @@
 
 CXX_STD = CXX
 PKG_CXXFLAGS = -std=gnu++17
-PKG_LIBS = -lstdc++fs -lRblas -lRlapack
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -lstdc++fs 
 
