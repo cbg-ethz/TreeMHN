@@ -21,7 +21,8 @@ other mutation IDs can be duplicated in the tree to allow for parallel mutations
 \item{n_order}{Length of the pathways (Default: 4).}
 }
 \value{
-Pathway probabilities inferred from the row-normalized W matrix of the REVOLVER algorithm.
+A list containing the matrix W and the pathway probabilities 
+inferred from the row-normalized W matrix of the REVOLVER algorithm.
 }
 \description{
 This function computes the pathway probabilities inferred from the

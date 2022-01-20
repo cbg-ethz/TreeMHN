@@ -213,7 +213,8 @@ trees_to_revolver_W <- function(n, tree_df) {
 ##' \item Parent_ID: IDs of the parent node ID. The root node has itself as parent (ID "1").
 ##' }
 ##' @param n_order Length of the pathways (Default: 4).
-##' @return Pathway probabilities inferred from the row-normalized W matrix of the REVOLVER algorithm.
+##' @return A list containing the matrix W and the pathway probabilities 
+##' inferred from the row-normalized W matrix of the REVOLVER algorithm.
 ##' @author Xiang Ge Luo
 ##' @export
 get_revolver_pathways <- function(n, tree_df, n_order = 4) {
@@ -232,7 +233,9 @@ get_revolver_pathways <- function(n, tree_df, n_order = 4) {
   }
 
   probs <- probs / sum(probs) # normalize
-  return(probs)
+  
+  res <- list(W = W, probs = probs)
+  return(res)
 
 }
 
@@ -250,7 +253,8 @@ get_revolver_pathways <- function(n, tree_df, n_order = 4) {
 ##' \item Parent_ID: IDs of the parent node ID. The root node has itself as parent (ID "1").
 ##' }
 ##' @param n_order Length of the pathways (Default: 4).
-##' @return Pathway probabilities inferred from the row-normalized beta matrix of the HINTRA algorithm.
+##' @return A list containing the matrix beta and the pathway probabilities 
+##' inferred from the row-normalized beta matrix of the HINTRA algorithm.
 ##' @author Xiang Ge Luo
 ##' @export
 get_hintra_pathways <- function(n, tree_df, n_order = 4) {
@@ -308,7 +312,8 @@ get_hintra_pathways <- function(n, tree_df, n_order = 4) {
     }
   }
 
-  return(probs)
+  res <- list(B = B, probs = probs)
+  return(res)
 
 }
 

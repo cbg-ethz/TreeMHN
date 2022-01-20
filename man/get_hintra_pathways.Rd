@@ -21,7 +21,8 @@ other mutation IDs can be duplicated in the tree to allow for parallel mutations
 \item{n_order}{Length of the pathways (Default: 4).}
 }
 \value{
-Pathway probabilities inferred from the row-normalized beta matrix of the HINTRA algorithm.
+A list containing the matrix beta and the pathway probabilities 
+inferred from the row-normalized beta matrix of the HINTRA algorithm.
 }
 \description{
 This function computes the pathway probabilities inferred from the
