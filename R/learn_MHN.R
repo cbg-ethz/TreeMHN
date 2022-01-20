@@ -41,23 +41,28 @@ initialize_Theta <- function(n, N, trees, lambda_s) {
 ##' @name learn_MHN
 ##' @title Learn a Mutual Hazard Network from a set of mutation trees
 ##' @description This function learns a Mutual Hazard Network from a set of mutation trees
-##' in the format of a TreeMHN object
+##' in the format of a TreeMHN object.
 ##' @param tree_obj A TreeMHN object
-##' @param gamma Penalization parameter in the objective function (Default: 0.5)
-##' @param lambda_s Sampling rate (Default: 1)
-##' @param Theta_init Initial value of the MHN provided to the optimization procedure (Default: NULL)
-##' @param M Number of Monte Carlo samples to be drawn (Default: 100)
-##' @param iterations Number of iterations for the EM/MCEM algorithm (Default: 1000)
+##' @param gamma Penalization parameter in the objective function (Default: 0.5).
+##' @param lambda_s Sampling rate (Default: 1).
+##' @param Theta_init Initial value of the MHN provided to the optimization procedure (Default: NULL).
+##' @param M Number of Monte Carlo samples to be drawn (Default: 100).
+##' @param iterations Number of iterations for the EM/MCEM algorithm (Default: 500).
 ##' @param to_mask An integer vector of indices by column, which is used to mask the
-##' off-diagonal entries of an MHN (Default: an empty vector)
-##' @param use_EM A boolean value to determine whether the EM/MCEM algorithm is used (Default: FALSE)
-##' @param verbose A boolean value to determine whether optimization steps are printed (Default: FALSE)
+##' off-diagonal entries of an MHN (Default: an empty vector).
+##' @param use_EM A boolean value to determine whether the EM/MCEM algorithm is used (Default: FALSE).
+##' @param verbose A boolean value to determine whether optimization steps are printed (Default: FALSE).
+##' @param MC_threshold A threshold on the maximum number of subtrees of a given tree,
+##' above which Monte Carlo sampling will be used (Default: 500). 
+##' @param increment_M The step size to increment the number of Monte Carlo samples (Default: 0).
+##' @param increment_M_bound The upper bound on the number of Monte Carlo samples (Default: 500).
 ##' @return A Mutual Hazard Network Theta
 ##' @author Xiang Ge Luo
 ##' @export
 learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
-                      M = 100, iterations = 1000, to_mask = integer(0),
-                      use_EM = FALSE, verbose = FALSE) {
+                      M = 100, iterations = 500, to_mask = integer(0),
+                      use_EM = FALSE, verbose = FALSE, MC_threshold = 500,
+                      increment_M = 0, increment_M_bound = 500) {
 
   n <- tree_obj$n
   N <- tree_obj$N
@@ -76,40 +81,72 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
     Theta <- Theta_init
   }
 
-  round <- 0
+  round <- 1
   reltol <- Inf
   ll <- -1e10
   cat("Checking whether MCEM is needed...\n")
-  MC_flags <- get_MC_flags(N, n, trees)
+  MC_flags <- get_MC_flags(N, n, trees, MC_threshold)
 
   if (any(MC_flags) || use_EM) { # EM/MCEM
 
     cat("Running hybrid EM/MCEM...\n")
     while ((round < iterations) && (reltol > 1e-6)) {
 
-      # E-step
-      timed_trees <- get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
-
-      # M-step
-      optim_res <- optim(Theta, full_MHN_objective, full_MHN_grad, timed_trees,
-                         gamma, n, N, lambda_s, to_mask, weights, N_patients, smallest_tree_size,
-                         method = "L-BFGS-B",
-                         lower = -10, upper = 10,
-                         control = list(fnscale = -1,
-                                        trace = 0,
-                                        maxit = 500,
-                                        factr = 1e10))
-      Theta <- optim_res$par
-      round <- round + 1
-      reltol <- abs(optim_res$value - ll) / abs(ll)
-      if (M < 1000) {
-        M <- M + 20
-      }
-      ll <- optim_res$value
-      if ((round %% 10 == 0) && verbose) {
+      if (verbose) {
+        
         cat("EM iteration round: ", round, "\n")
-        cat("log-likelihood: ", ll, "\n")
+        
+        # E-step
+        cat("E-step...\n")
+        start_time <- Sys.time()
+        timed_trees <- get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
+        print(Sys.time() - start_time)
+        
+        # M-step
+        cat("M-step...\n")
+        start_time <- Sys.time()
+        optim_res <- optim(Theta, full_MHN_objective, full_MHN_grad, timed_trees,
+                           gamma, n, N, lambda_s, to_mask, weights, N_patients, smallest_tree_size,
+                           method = "L-BFGS-B",
+                           lower = -10, upper = 10,
+                           control = list(fnscale = -1,
+                                          trace = 0,
+                                          maxit = 100,
+                                          factr = 1e10))
+        Theta <- optim_res$par
+        round <- round + 1
+        reltol <- abs(optim_res$value - ll) / abs(ll)
+        if (M < increment_M_bound) {
+          M <- M + increment_M
+        }
+        ll <- optim_res$value
+        print(Sys.time() - start_time)
+        cat("Complete-data log-likelihood: ", ll, "\n")
+        
+      } else {
+        
+        # E-step
+        timed_trees <- get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
+        
+        # M-step
+        optim_res <- optim(Theta, full_MHN_objective, full_MHN_grad, timed_trees,
+                           gamma, n, N, lambda_s, to_mask, weights, N_patients, smallest_tree_size,
+                           method = "L-BFGS-B",
+                           lower = -10, upper = 10,
+                           control = list(fnscale = -1,
+                                          trace = 0,
+                                          maxit = 100,
+                                          factr = 1e10))
+        Theta <- optim_res$par
+        round <- round + 1
+        reltol <- abs(optim_res$value - ll) / abs(ll)
+        if (M < increment_M_bound) {
+          M <- M + increment_M
+        }
+        ll <- optim_res$value
+        
       }
+      
     }
 
   } else { # MLE
@@ -143,8 +180,10 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
 ##' @param N Sample size
 ##' @param n Number of events
 ##' @param trees Mutation tree structures
+##' @param MC_threshold A threshold on the maximum number of subtrees of a given tree,
+##' above which Monte Carlo sampling will be used (Default: 500). 
 ##' @return A boolean vector indicating whether Monte Carlo sampling is used for each tree
-get_MC_flags <- function(N, n, trees) {
+get_MC_flags <- function(N, n, trees, MC_threshold) {
 
   MC_flags <- logical(N)
   for (i in c(1:N)) {
@@ -157,7 +196,7 @@ get_MC_flags <- function(N, n, trees) {
     } else {
       p <- build_poset(tree)
       comp_geno <- compatible_genotypes(p)
-      if (nrow(comp_geno) < 500) { # trees with fewer than 500 subtrees
+      if (nrow(comp_geno) < MC_threshold) {
         MC_flags[i] <- FALSE
       } else {
         MC_flags[i] <- TRUE

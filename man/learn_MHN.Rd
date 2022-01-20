@@ -10,38 +10,48 @@ learn_MHN(
   lambda_s = 1,
   Theta_init = NULL,
   M = 100,
-  iterations = 1000,
+  iterations = 500,
   to_mask = integer(0),
   use_EM = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  MC_threshold = 500,
+  increment_M = 0,
+  increment_M_bound = 500
 )
 }
 \arguments{
 \item{tree_obj}{A TreeMHN object}
 
-\item{gamma}{Penalization parameter in the objective function (Default: 0.5)}
+\item{gamma}{Penalization parameter in the objective function (Default: 0.5).}
 
-\item{lambda_s}{Sampling rate (Default: 1)}
+\item{lambda_s}{Sampling rate (Default: 1).}
 
-\item{Theta_init}{Initial value of the MHN provided to the optimization procedure (Default: NULL)}
+\item{Theta_init}{Initial value of the MHN provided to the optimization procedure (Default: NULL).}
 
-\item{M}{Number of Monte Carlo samples to be drawn (Default: 100)}
+\item{M}{Number of Monte Carlo samples to be drawn (Default: 100).}
 
-\item{iterations}{Number of iterations for the EM/MCEM algorithm (Default: 1000)}
+\item{iterations}{Number of iterations for the EM/MCEM algorithm (Default: 500).}
 
 \item{to_mask}{An integer vector of indices by column, which is used to mask the
-off-diagonal entries of an MHN (Default: an empty vector)}
+off-diagonal entries of an MHN (Default: an empty vector).}
 
-\item{use_EM}{A boolean value to determine whether the EM/MCEM algorithm is used (Default: FALSE)}
+\item{use_EM}{A boolean value to determine whether the EM/MCEM algorithm is used (Default: FALSE).}
 
-\item{verbose}{A boolean value to determine whether optimization steps are printed (Default: FALSE)}
+\item{verbose}{A boolean value to determine whether optimization steps are printed (Default: FALSE).}
+
+\item{MC_threshold}{A threshold on the maximum number of subtrees of a given tree,
+above which Monte Carlo sampling will be used (Default: 500).}
+
+\item{increment_M}{The step size to increment the number of Monte Carlo samples (Default: 0).}
+
+\item{increment_M_bound}{The upper bound on the number of Monte Carlo samples (Default: 500).}
 }
 \value{
 A Mutual Hazard Network Theta
 }
 \description{
 This function learns a Mutual Hazard Network from a set of mutation trees
-in the format of a TreeMHN object
+in the format of a TreeMHN object.
 }
 \author{
 Xiang Ge Luo

@@ -5,7 +5,7 @@
 \title{get_MC_flags(N, trees)
 A function that determines whether Monte Carlo sampling is needed for each tree}
 \usage{
-get_MC_flags(N, n, trees)
+get_MC_flags(N, n, trees, MC_threshold)
 }
 \arguments{
 \item{N}{Sample size}
@@ -13,6 +13,9 @@ get_MC_flags(N, n, trees)
 \item{n}{Number of events}
 
 \item{trees}{Mutation tree structures}
+
+\item{MC_threshold}{A threshold on the maximum number of subtrees of a given tree,
+above which Monte Carlo sampling will be used (Default: 500).}
 }
 \value{
 A boolean vector indicating whether Monte Carlo sampling is used for each tree
