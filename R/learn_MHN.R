@@ -73,7 +73,9 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
 
   # initialize Theta
   if (is.null(Theta_init)) {
-    cat("Initializing Theta...\n")
+    if (verbose) {
+      cat("Initializing Theta...\n")
+    }
     Theta <- initialize_Theta(n, N, trees, lambda_s)
   } else if (nrow(Theta_init) != n) {
     stop("The dimension of the provided MHN is different from n. Please check again...")
@@ -84,16 +86,18 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
   round <- 1
   reltol <- Inf
   ll <- -1e10
-  cat("Checking whether MCEM is needed...\n")
+  if (verbose) {
+    cat("Checking whether MCEM is needed...\n")
+  }
   MC_flags <- get_MC_flags(N, n, trees, MC_threshold)
 
   if (any(MC_flags) || use_EM) { # EM/MCEM
-
-    cat("Running hybrid EM/MCEM...\n")
-    while ((round < iterations) && (reltol > 1e-6)) {
-
-      if (verbose) {
-        
+    
+    if (verbose) {
+      
+      cat("Running hybrid EM/MCEM...\n")
+      
+      while ((round < iterations) && (reltol > 1e-6)) {
         cat("EM iteration round: ", round, "\n")
         
         # E-step
@@ -122,8 +126,11 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
         ll <- optim_res$value
         print(Sys.time() - start_time)
         cat("Complete-data log-likelihood: ", ll, "\n")
-        
-      } else {
+      }
+      
+    } else {
+      
+      while ((round < iterations) && (reltol > 1e-6)) {
         
         # E-step
         timed_trees <- get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
@@ -144,14 +151,17 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
           M <- M + increment_M
         }
         ll <- optim_res$value
-        
       }
       
     }
 
-  } else { # MLE
 
-    cat("Running MLE...\n")
+  } else { # MLE
+    
+    if (verbose) {
+      cat("Running MLE...\n")
+    }
+    
     obj_grad_help <- obj_grad_helper(n, N, trees, Theta, lambda_s)
     optim_res <- optim(Theta, obs_MHN_objective, obs_MHN_grad, n, N, lambda_s,
                        trees, gamma, obj_grad_help, to_mask, weights, N_patients, smallest_tree_size,
@@ -159,7 +169,7 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
                        lower = -10, upper = 10,
                        control = list(fnscale = -1,
                                       trace = verbose,
-                                      maxit = 500,
+                                      maxit = iterations,
                                       factr = 1e10))
 
     Theta <- optim_res$par
