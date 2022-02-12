@@ -3,7 +3,7 @@
 \name{sort_one_tree_df}
 \alias{sort_one_tree_df}
 \title{tree_df_to_trees(one_tree_df)
-A helper function that sorts the node IDs such that they are in ascending order}
+A helper function that sorts the parent IDs and the node IDs such that they are in ascending order}
 \usage{
 sort_one_tree_df(one_tree_df)
 }
@@ -17,5 +17,5 @@ A sorted tree data frame
 }
 \description{
 tree_df_to_trees(one_tree_df)
-A helper function that sorts the node IDs such that they are in ascending order
+A helper function that sorts the parent IDs and the node IDs such that they are in ascending order
 }

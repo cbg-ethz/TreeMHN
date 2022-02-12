@@ -160,14 +160,23 @@ tree_df_to_trees <- function(n, tree_df) {
 }
 
 ##' tree_df_to_trees(one_tree_df)
-##' A helper function that sorts the node IDs such that they are in ascending order
+##' A helper function that sorts the parent IDs and the node IDs such that they are in ascending order
 ##' @param n Number of mutational events
 ##' @param one_tree_df A tree data frame for a single patient/tumor
 ##' @return A sorted tree data frame
 sort_one_tree_df <- function(one_tree_df) {
-  one_tree_df$Parent_ID <- sapply(c(1:nrow(one_tree_df)),
-                                  function (j) which(one_tree_df$Node_ID == one_tree_df$Parent_ID[j]))
-  one_tree_df$Node_ID <- seq(1, nrow(one_tree_df))
+  
+  repeat {
+    p_vec <- one_tree_df$Parent_ID
+    one_tree_df <- one_tree_df[order(one_tree_df$Parent_ID),]
+    one_tree_df$Parent_ID <- sapply(c(1:nrow(one_tree_df)),
+                                    function (j) which(one_tree_df$Node_ID == one_tree_df$Parent_ID[j]))
+    one_tree_df$Node_ID <- seq(1, nrow(one_tree_df))
+    if (all(p_vec == one_tree_df$Parent_ID)) {
+      break
+    }
+  }
+  
   return(one_tree_df)
 }
 
