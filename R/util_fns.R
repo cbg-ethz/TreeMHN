@@ -12,7 +12,7 @@ obj_grad_helper <- function(n, N, trees, Theta, lambda_s) {
     comp_geno_vec <- append(comp_geno_vec, list(comp_geno))
     node_labels <- get_node_labels(p)
     node_labels_vec <- append(node_labels_vec, list(node_labels))
-    tr_mat <- build_tr_mat(n, Theta, comp_geno, node_labels)
+    tr_mat <- build_tr_mat(n, Theta, comp_geno, node_labels, lambda_s)
     tr_mat_vec <- append(tr_mat_vec, list(tr_mat))
     log_prob <- compute_obs_ll(tr_mat, lambda_s)
     log_prob_vec <- c(log_prob_vec, log_prob)

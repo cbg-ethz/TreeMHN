@@ -7,20 +7,20 @@ using namespace arma;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-double l1_penalty(arma::mat Theta, double gamma) {
+double l1_penalty(arma::mat Theta, const double &gamma) {
   Theta.diag(0).fill(0);
   return gamma * accu(sqrt(Theta % Theta));
 }
 
 
-NumericMatrix with_l1_penalty_grad(arma::mat Theta, double gamma, arma::mat Theta_grad, int n) {
+arma::mat with_l1_penalty_grad(arma::mat Theta, const double &gamma, 
+                               const arma::mat &Theta_grad, const int &n) {
   Theta.diag(0).fill(0);
-  Theta_grad = Theta_grad - gamma * arma::sign(Theta);
-  return wrap(Theta_grad);
+  return Theta_grad - gamma * arma::sign(Theta);
 }
 
 
-double full_tree_log_score(arma::mat Theta, const IntegerVector &nodes, const List &children,
+double full_tree_log_score(const arma::mat &Theta, const IntegerVector &nodes, const List &children,
                            const NumericVector &time_diffs, IntegerVector pathway = {}, int current_pos = 0) {
 
   double log_score {0};
@@ -65,7 +65,7 @@ double full_tree_log_score(arma::mat Theta, const IntegerVector &nodes, const Li
 
 }
 
-arma::mat full_tree_grad(arma::mat Theta, int n, const IntegerVector &nodes, const List &children,
+arma::mat full_tree_grad(const arma::mat &Theta, const int &n, const IntegerVector &nodes, const List &children,
                          const NumericVector &time_diffs, IntegerVector pathway = {}, int current_pos = 0) {
 
   arma::mat Theta_grad(n,n,fill::zeros);
@@ -118,126 +118,8 @@ arma::mat full_tree_grad(arma::mat Theta, int n, const IntegerVector &nodes, con
   }
 }
 
-// [[Rcpp::export]]
-double full_MHN_objective_(NumericVector Theta, const List &trees, double gamma,
-                           int n, int N, double lambda_s, IntegerVector to_mask, NumericVector weights) {
-
-  double log_score {0};
-
-  // Convert Theta vector to matrix
-  Theta.attr("dim") = Dimension(n, n);
-  arma::mat Theta_ = as<arma::mat>(Theta);
-
-  // Mask elements if needed
-  if (to_mask.length() != 0) {
-    for (int i : to_mask) {
-      Theta_(i - 1) = 0;
-    }
-  }
-
-  // Loop through all trees
-  for (int i {0}; i < trees.length(); ++i) {
-    List tree = trees.at(i);
-    IntegerVector nodes = tree["nodes"];
-    List children = tree["children"];
-    NumericVector time_diffs =  tree["time_diffs"];
-    double weight = weights.at(i); //New
-    log_score += weight * full_tree_log_score(Theta_, nodes, children, time_diffs); //New
-  }
-
-  if (log_score == -R_PosInf) {
-    log_score = -1e10;
-  }
-
-  if (log_score == R_PosInf) {
-    log_score = -1e2;
-  }
-
-  log_score = log_score - l1_penalty(Theta_, gamma);
-  return log_score;
-}
-
-
-// [[Rcpp::export]]
-NumericMatrix full_MHN_grad_(NumericVector Theta, const List &trees, double gamma,
-                             int n, int N, double lambda_s, IntegerVector to_mask, NumericVector weights) {
-
-  // Convert Theta vector to matrix
-  Theta.attr("dim") = Dimension(n, n);
-
-  arma::mat Theta_grad(n,n,fill::zeros);
-  arma::mat Theta_ = as<arma::mat>(Theta);
-
-  // Mask elements if needed
-  if (to_mask.length() != 0) {
-    for (int i : to_mask) {
-      Theta_(i - 1) = 0;
-    }
-  }
-
-  // Loop through all trees
-  for (int i {0}; i < trees.length(); ++i) {
-    List tree = trees.at(i);
-    IntegerVector nodes = tree["nodes"];
-    List children = tree["children"];
-    NumericVector time_diffs =  tree["time_diffs"];
-    double weight = weights.at(i); //New
-    Theta_grad += weight * full_tree_grad(Theta_, n, nodes, children, time_diffs); //New
-  }
-
-  NumericMatrix Theta_grad_ = with_l1_penalty_grad(Theta_, gamma, Theta_grad, n);
-
-  if (to_mask.length() != 0) {
-    for (int i : to_mask) {
-      Theta_grad(i - 1) = 0;
-    }
-  }
-
-  return Theta_grad_;
-}
-
-// [[Rcpp::export]]
-double obs_MHN_objective_(NumericVector Theta, int n, int N, double lambda_s,
-                          const List &trees, double gamma, List &obj_grad_help, 
-                          IntegerVector to_mask, NumericVector weights) {
-
-  // Convert Theta vector to matrix
-  Theta.attr("dim") = Dimension(n, n);
-  arma::mat Theta_ = as<arma::mat>(Theta);
-
-  // Mask elements if needed
-  if (to_mask.length() != 0) {
-    for (int i : to_mask) {
-      Theta_(i - 1) = 0;
-    }
-  }
-
-  List tr_mat_vec = obj_grad_help["tr_mat_vec"];
-  List comp_geno_vec = obj_grad_help["comp_geno_vec"];
-  List node_labels_vec = obj_grad_help["node_labels_vec"];
-  NumericVector log_prob_vec = obj_grad_help["log_prob_vec"];
-
-  double log_score {0};
-  for (int i {0}; i < N; ++i) {
-    IntegerMatrix genotypes = comp_geno_vec.at(i);
-    List node_labels = node_labels_vec.at(i);
-    arma::sp_mat tr_mat = build_tr_mat(n, Theta_, genotypes, node_labels);
-    tr_mat_vec.at(i) = tr_mat;
-    double p = compute_obs_ll(tr_mat, lambda_s);
-    double weight = weights.at(i); //New
-    log_score += weight * p; //New
-    log_prob_vec.at(i) = p;
-  }
-  obj_grad_help["tr_mat_vec"] = tr_mat_vec;
-  obj_grad_help["log_prob_vec"] = log_prob_vec;
-
-  log_score = log_score - l1_penalty(Theta_, gamma);
-  return log_score;
-
-}
-
-arma::mat obs_tree_grad(const arma::mat Theta, int n, const IntegerVector &nodes, const List &children,
-                        const LogicalVector &in_tree, arma::sp_mat tr_mat, double lambda_s,
+arma::mat obs_tree_grad(const arma::mat &Theta, const int &n, const IntegerVector &nodes, const List &children,
+                        const LogicalVector &in_tree, const arma::sp_mat &tr_mat, const double &lambda_s,
                         const IntegerMatrix &genotypes, const List &node_labels,
                         std::vector<int> pathway = {}, int current_pos = 0) {
 
@@ -285,53 +167,210 @@ arma::mat obs_tree_grad(const arma::mat Theta, int n, const IntegerVector &nodes
   }
 }
 
+
+double prob_empty_tree(const arma::vec &lambdas, const double &lambda_s) {
+  
+  return lambda_s / (lambda_s + sum(lambdas));
+  
+}
+
+
+double prob_one_tree(const double &n, const arma::mat &exp_Theta, const double &lambda_s) {
+  
+  double p = 0;
+  double sum_lambdas = sum(exp_Theta.diag(0));
+  for (int i {0}; i < n; ++i) {
+    double temp_denom = 0;
+    for (int j {0}; j < n; ++j) {
+      if (j != i) {
+        temp_denom += exp_Theta(j, j) * (1 + exp_Theta(j, i));
+      }
+    }
+    p += exp_Theta(i, i) / (lambda_s + sum_lambdas) * lambda_s / (lambda_s + temp_denom);
+  }
+  return p;
+  
+}
+
+
 // [[Rcpp::export]]
-NumericMatrix obs_MHN_grad_(NumericVector Theta, int n, int N, double lambda_s,
-                            const List &trees, double gamma, const List &obj_grad_help, 
-                            IntegerVector to_mask, NumericVector weights) {
-
-  // Convert Theta vector to matrix
-  Theta.attr("dim") = Dimension(n, n);
-  arma::mat Theta_ = as<arma::mat>(Theta);
-
+double full_MHN_objective(const arma::vec &Theta, const List &trees, const double &gamma,
+                          const int &n, const int &N, const double &lambda_s, 
+                          const IntegerVector &to_mask, const NumericVector &weights,
+                          const int &N_patients, double smallest_tree_size = 1) {
+  
+  arma::mat Theta_ = arma::reshape(Theta, n, n);
+  
   // Mask elements if needed
   if (to_mask.length() != 0) {
     for (int i : to_mask) {
       Theta_(i - 1) = 0;
     }
   }
-
-  arma::mat Theta_grad(n,n,fill::zeros);
-  List tr_mat_vec = obj_grad_help["tr_mat_vec"];
-  List comp_geno_vec = obj_grad_help["comp_geno_vec"];
-  List node_labels_vec = obj_grad_help["node_labels_vec"];
-  NumericVector log_prob_vec = obj_grad_help["log_prob_vec"];
-
+  
+  double log_score = - l1_penalty(Theta_, gamma);;
+  
   // Loop through all trees
-  for (int i {0}; i < N; ++i) {
+  for (int i {0}; i < trees.length(); ++i) {
     List tree = trees.at(i);
-    IntegerVector nodes = tree["nodes"];
-    List children = tree["children"];
-    LogicalVector in_tree =  tree["in_tree"];
-    arma::sp_mat tr_mat = tr_mat_vec.at(i);
-    IntegerMatrix genotypes = comp_geno_vec.at(i);
-    List node_labels = node_labels_vec.at(i);
-    double weight = weights.at(i); //New
-
-    arma::mat temp = obs_tree_grad(Theta_, n, nodes, children, in_tree, tr_mat,
-                                   lambda_s, genotypes, node_labels);
-
-    double p = log_prob_vec.at(i);
-    Theta_grad += weight * arma::sign(temp) % exp(log(arma::abs(temp)) - p); //New
+    log_score += weights.at(i) * full_tree_log_score(Theta_, tree["nodes"], tree["children"], tree["time_diffs"]);
   }
+  
+  arma::mat exp_Theta = exp(Theta_);
+  arma::vec lambdas = exp_Theta.diag(0);
+  
+  if (smallest_tree_size == 1) {
+    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s));
+  }
+  
+  if (smallest_tree_size == 2) {
+    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s)) - prob_one_tree(n, exp_Theta, lambda_s);
+  }
+  
+  return log_score;
+  
+}
 
-  NumericMatrix Theta_grad_ = with_l1_penalty_grad(Theta_, gamma, Theta_grad, n);
-
+// [[Rcpp::export]]
+arma::mat full_MHN_grad(const arma::vec &Theta, const List &trees, const double &gamma,
+                        const int &n, const int &N, const double &lambda_s, 
+                        const IntegerVector &to_mask, const NumericVector &weights,
+                        const int &N_patients, double smallest_tree_size = 1) {
+  
+  arma::mat Theta_ = arma::reshape(Theta, n, n);
+  
+  // Mask elements if needed
+  if (to_mask.length() != 0) {
+    for (int i : to_mask) {
+      Theta_(i - 1) = 0;
+    }
+  }
+  
+  arma::mat Theta_grad(n,n,fill::zeros);
+  // Loop through all trees
+  for (int i {0}; i < trees.length(); ++i) {
+    List tree = trees.at(i);
+    Theta_grad += weights.at(i) * full_tree_grad(Theta_, n, tree["nodes"], tree["children"], tree["time_diffs"]);
+  }
+  Theta_grad = with_l1_penalty_grad(Theta_, gamma, Theta_grad, n); 
+  
   if (to_mask.length() != 0) {
     for (int i : to_mask) {
       Theta_grad(i - 1) = 0;
     }
   }
-
-  return Theta_grad_;
+  
+  arma::mat exp_Theta = exp(Theta_);
+  arma::vec lambdas = exp_Theta.diag(0);
+  double p_empty = prob_empty_tree(lambdas, lambda_s);
+  
+  if (smallest_tree_size >= 1) {
+    Theta_grad.diag(0) -= N_patients * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+  }
+  
+  // if (smallest_tree_size == 2) {
+  //   double p_one = prob_one_tree(n, exp_Theta, lambda_s);
+  //   Theta_grad.diag(0) -= N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
+  // }
+  
+  return Theta_grad;
+  
 }
+
+
+// [[Rcpp::export]]
+double obs_MHN_objective(const arma::vec &Theta, const int &n, const int &N, 
+                         const double &lambda_s, const List &trees, const double &gamma, 
+                         List &tr_mat_vec, NumericVector &log_prob_vec,
+                         const List &comp_geno_vec, const List &node_labels_vec, 
+                         const IntegerVector &to_mask, const NumericVector &weights,
+                         const int &N_patients, double smallest_tree_size = 1) {
+  
+  arma::mat Theta_ = arma::reshape(Theta, n, n);
+  
+  // Mask elements if needed
+  if (to_mask.length() != 0) {
+    for (int i : to_mask) {
+      Theta_(i - 1) = 0;
+    }
+  }
+  
+  double log_score = - l1_penalty(Theta_, gamma);
+  for (int i {0}; i < N; ++i) {
+
+    arma::sp_mat tr_mat = build_tr_mat(n, Theta_, comp_geno_vec.at(i), node_labels_vec.at(i), lambda_s);
+    tr_mat_vec.at(i) = tr_mat;
+    double p = compute_obs_ll(tr_mat, lambda_s);
+    log_score += weights.at(i) * p;
+    log_prob_vec.at(i) = p;
+  }
+  
+  arma::mat exp_Theta = exp(Theta_);
+  arma::vec lambdas = exp_Theta.diag(0);
+  
+  if (smallest_tree_size == 1) {
+    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s));
+  }
+  
+  if (smallest_tree_size == 2) {
+    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s)) - prob_one_tree(n, exp_Theta, lambda_s);
+  }
+  
+  return log_score;
+  
+}
+
+
+// [[Rcpp::export]]
+arma::mat obs_MHN_grad(const arma::vec &Theta, const int &n, const int &N, 
+                       const double &lambda_s, const List &trees, const double &gamma, 
+                       const List &tr_mat_vec, const NumericVector &log_prob_vec,
+                       const List &comp_geno_vec, const List &node_labels_vec, 
+                       const IntegerVector &to_mask, const NumericVector &weights,
+                       const int &N_patients, double smallest_tree_size = 1) {
+  
+  arma::mat Theta_ = arma::reshape(Theta, n, n);
+  
+  // Mask elements if needed
+  if (to_mask.length() != 0) {
+    for (int i : to_mask) {
+      Theta_(i - 1) = 0;
+    }
+  }
+  
+  arma::mat Theta_grad(n,n,fill::zeros);
+  // Loop through all trees
+  for (int i {0}; i < N; ++i) {
+    
+    List tree = trees.at(i);
+    arma::mat temp = obs_tree_grad(Theta_, n, tree["nodes"], tree["children"], 
+                                   tree["in_tree"], tr_mat_vec.at(i),
+                                   lambda_s, comp_geno_vec.at(i), node_labels_vec.at(i));
+    
+    double p = log_prob_vec.at(i);
+    Theta_grad += weights.at(i) * arma::sign(temp) % exp(log(arma::abs(temp)) - p);
+  }
+  Theta_grad = with_l1_penalty_grad(Theta_, gamma, Theta_grad, n);
+  
+  if (to_mask.length() != 0) {
+    for (int i : to_mask) {
+      Theta_grad(i - 1) = 0;
+    }
+  }
+  
+  arma::mat exp_Theta = exp(Theta_);
+  arma::vec lambdas = exp_Theta.diag(0);
+  double p_empty = prob_empty_tree(lambdas, lambda_s);
+  
+  if (smallest_tree_size >= 1) {
+    Theta_grad.diag(0) -= N_patients * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+  }
+  
+  // if (smallest_tree_size == 2) {
+  //   double p_one = prob_one_tree(n, exp_Theta, lambda_s);
+  //   Theta_grad.diag(0) -= N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
+  // }
+  
+  return Theta_grad;
+}
+

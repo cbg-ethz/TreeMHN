@@ -7,8 +7,7 @@ using namespace arma;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-// [[Rcpp::export]]
-double rtexp(double lambda, double lbound, double ubound) {
+double rtexp(const double &lambda, const double &lbound, const double &ubound) {
 
   if (lbound > ubound) {
     // throw std::runtime_error("Something went wrong in rtexp!");
@@ -37,7 +36,7 @@ std::vector<int> my_setdiff(std::vector<int> v1, std::vector<int> v2) {
 }
 
 // [[Rcpp::export]]
-double get_lambda(std::vector<int> node, arma::mat Theta) {
+double get_lambda(std::vector<int> node, const arma::mat &Theta) {
   double lambda {0};
   if (node.size() == 1) {
     int i = node.at(0) - 1;
@@ -54,7 +53,7 @@ double get_lambda(std::vector<int> node, arma::mat Theta) {
   return lambda;
 }
 
-std::string node_to_string(std::vector<int> node) {
+std::string node_to_string(const std::vector<int> &node) {
   std::string s {""};
   for (int i: node) {
     s += std::to_string(i);
@@ -64,7 +63,7 @@ std::string node_to_string(std::vector<int> node) {
 }
 
 
-std::vector<int> get_exit_set(int n, std::vector<int> node) {
+std::vector<int> get_exit_set(const int &n, const std::vector<int> &node) {
 
   std::vector<int> temp(n);
   std::iota(temp.begin(), temp.end(), 1);

@@ -9,7 +9,7 @@ using namespace arma;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-double get_exit_lambda(int n, IntegerVector genotype, arma::mat Theta, const List &node_labels) {
+double get_exit_lambda(const int &n, const IntegerVector &genotype, const arma::mat &Theta, const List &node_labels) {
 
   if (sum(genotype) == 0) {
     return sum(exp(Theta.diag()));
@@ -68,7 +68,8 @@ double get_exit_lambda(int n, IntegerVector genotype, arma::mat Theta, const Lis
 }
 
 // [[Rcpp::export]]
-arma::sp_mat build_tr_mat(int n, arma::mat Theta, const IntegerMatrix &genotypes, const List &node_labels) {
+arma::sp_mat build_tr_mat(const int &n, const arma::mat &Theta, const IntegerMatrix &genotypes, 
+                          const List &node_labels, const double &lambda_s) {
 
   int p = genotypes.ncol();
   int L = genotypes.nrow();
@@ -109,40 +110,26 @@ arma::sp_mat build_tr_mat(int n, arma::mat Theta, const IntegerMatrix &genotypes
 
   }
 
+  tr_matrix.diag() += lambda_s; // matrix V_T
   return tr_matrix;
 }
 
 // [[Rcpp::export]]
-double compute_obs_ll(arma::sp_mat tr_mat, double lambda_s) {
+double compute_obs_ll(const arma::sp_mat &tr_mat, const double &lambda_s) {
   int p = tr_mat.n_rows;
   if (p == 1) {
-    return -log(lambda_s + tr_mat(0,0));
+    return log(lambda_s) - log(tr_mat(0,0));
   } else {
-    tr_mat.diag() += lambda_s;
     arma::mat tr_mat_ = arma::mat(tr_mat);
     arma::vec b(p, fill::zeros);
     b(0) = 1;
     arma::vec temp = solve(trimatl(tr_mat_), b, arma::solve_opts::allow_ugly);
-    return log(temp(p-1) + 1e-10);
+    return log(lambda_s) + log(temp(p-1) + 1e-10);
   }
 }
 
-// [[Rcpp::export]]
-double compute_prob_ij(arma::sp_mat tr_mat, double lambda_s, int i, int j) {
-  int p = tr_mat.n_rows;
-  if (p == 1) {
-    return -log(lambda_s + tr_mat(0,0));
-  } else {
-    tr_mat.diag() += lambda_s;
-    arma::mat tr_mat_ = arma::mat(tr_mat);
-    arma::vec b(p, fill::zeros);
-    b(j - 1) = 1;
-    arma::vec temp = solve(trimatl(tr_mat_), b, arma::solve_opts::allow_ugly);
-    return temp(i-1);
-  }
-}
 
-int find_node_idx(std::vector<int> node, const List &node_labels) {
+int find_node_idx(const std::vector<int> &node, const List &node_labels) {
 
   for (int i {0}; i < node_labels.length(); ++i) {
     std::vector<int> temp = node_labels.at(i);
@@ -155,7 +142,7 @@ int find_node_idx(std::vector<int> node, const List &node_labels) {
 }
 
 
-arma::sp_mat dS_dlambda(std::vector<int> node, bool in_tree,
+arma::sp_mat dS_dlambda(std::vector<int> node, const bool &in_tree,
                         const IntegerMatrix &genotypes, const List &node_labels) {
 
   int p = genotypes.ncol();
@@ -226,7 +213,7 @@ arma::sp_mat dS_dlambda(std::vector<int> node, bool in_tree,
   return d_tr_mat;
 }
 
-arma::sp_mat build_AS(arma::sp_mat tr_mat, arma::sp_mat d_tr_mat) {
+arma::sp_mat build_AS(const arma::sp_mat &tr_mat, const arma::sp_mat &d_tr_mat) {
 
   int L = tr_mat.n_rows;
   arma::sp_mat zero_mat(L,L);
@@ -237,24 +224,24 @@ arma::sp_mat build_AS(arma::sp_mat tr_mat, arma::sp_mat d_tr_mat) {
 
 }
 
-long double compute_dp_dlambda(arma::sp_mat tr_mat, std::vector<int> node, bool in_tree, double lambda_s,
-                                const IntegerMatrix &genotypes, const List &node_labels) {
+long double compute_dp_dlambda(const arma::sp_mat &tr_mat, const std::vector<int> &node, 
+                               const bool &in_tree, const double &lambda_s,
+                               const IntegerMatrix &genotypes, const List &node_labels) {
 
   arma::sp_mat d_tr_mat = dS_dlambda(node, in_tree, genotypes, node_labels);
   arma::sp_mat AS = build_AS(tr_mat, d_tr_mat);
   int L = AS.n_rows;
-  AS.diag() += lambda_s;
   arma::mat AS_ = arma::mat(AS);
   arma::vec b(L, fill::zeros);
   b(0) = 1;
   arma::vec temp = solve(trimatl(AS_), b, arma::solve_opts::allow_ugly);
-  return temp(L-1);
+  return temp(L-1) * lambda_s;
 }
 
-void tree_E_step_(const arma::mat Theta, NumericVector &time_diffs, double prob_p, int n,
-                  const IntegerVector &nodes, const List &children,
-                  const LogicalVector &in_tree, arma::sp_mat tr_mat, double lambda_s,
-                  const IntegerMatrix &genotypes, const List &node_labels,
+void tree_E_step_(const arma::mat &Theta, NumericVector &time_diffs, 
+                  const double &prob_p, const int &n, const IntegerVector &nodes, 
+                  const List &children, const LogicalVector &in_tree, const arma::sp_mat &tr_mat, 
+                  const double &lambda_s, const IntegerMatrix &genotypes, const List &node_labels,
                   std::vector<int> pathway = {}, int current_pos = 0) {
 
   if (current_pos != 0) {
@@ -295,12 +282,11 @@ void tree_E_step_(const arma::mat Theta, NumericVector &time_diffs, double prob_
   }
 }
 
-// [[Rcpp::export]]
-NumericVector tree_E_step(const arma::mat Theta, int n, double lambda_s,
+NumericVector tree_E_step(const arma::mat &Theta, const int &n, const double &lambda_s,
                           const IntegerVector &nodes, const List &children, const LogicalVector &in_tree,
                           const IntegerMatrix &genotypes, const List &node_labels) {
 
-  arma::sp_mat tr_mat = build_tr_mat(n, Theta, genotypes, node_labels);
+  arma::sp_mat tr_mat = build_tr_mat(n, Theta, genotypes, node_labels, lambda_s);
   NumericVector time_diffs(nodes.length());
   double obs_ll = compute_obs_ll(tr_mat, lambda_s);
   tree_E_step_(Theta, time_diffs, exp(obs_ll), n,
@@ -311,9 +297,9 @@ NumericVector tree_E_step(const arma::mat Theta, int n, double lambda_s,
 }
 
 
-double tree_imp_samp_once(const NumericVector Theta, const IntegerVector &nodes,
+double tree_imp_samp_once(const arma::mat &Theta, const IntegerVector &nodes,
                           const List &children, const LogicalVector &in_tree,
-                          int n, NumericVector &time_diffs, double t_s,
+                          int n, NumericVector &time_diffs, const double &t_s,
                           IntegerVector pathway = {}, int current_pos = 0, double t_pa = 0) {
 
   double log_importance_weight = 0;
@@ -373,10 +359,9 @@ double tree_imp_samp_once(const NumericVector Theta, const IntegerVector &nodes,
 
 }
 
-// [[Rcpp::export]]
-NumericVector tree_importance_sampling(NumericVector Theta, const IntegerVector &nodes,
+NumericVector tree_importance_sampling(const arma::mat &Theta, const IntegerVector &nodes,
                                        const List &children, const LogicalVector &in_tree,
-                                       int n, int M, double lambda_s) {
+                                       const int &n, const int &M, const double &lambda_s) {
 
   NumericVector expected_time_diffs(nodes.length());
   double importance_weight_sum {0};
@@ -397,4 +382,33 @@ NumericVector tree_importance_sampling(NumericVector Theta, const IntegerVector 
 
   return expected_time_diffs;
 }
+
+
+// [[Rcpp::export]]
+void update_timed_trees(const int &n, const int &N, List &timed_trees, 
+                        const arma::mat &Theta, const double &lambda_s, const int &M,
+                        const List &comp_geno_vec, const List &node_labels_vec,
+                        const int &nr_exact) {
+  
+  // Loop through all trees using exact inference
+  for (int i {0}; i < nr_exact; ++i) {
+    
+    List tree = timed_trees.at(i);
+    tree["time_diffs"] = tree_E_step(Theta, n, lambda_s, tree["nodes"], tree["children"], 
+                           tree["in_tree"], comp_geno_vec.at(i), node_labels_vec.at(i));
+    timed_trees.at(i) = tree;
+    
+  }
+  
+  // Loop through all trees using approximate inference
+  for (int i {nr_exact}; i < N; ++i) {
+    
+    List tree = timed_trees.at(i);
+    tree["time_diffs"] = tree_importance_sampling(Theta, tree["nodes"], tree["children"], tree["in_tree"], n, M, lambda_s);
+    timed_trees.at(i) = tree;
+    
+  }
+  
+}
+
 

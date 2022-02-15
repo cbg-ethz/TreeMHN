@@ -93,6 +93,25 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
 
   if (any(MC_flags) || use_EM) { # EM/MCEM
     
+    # Re-order trees such that trees with exact inference go first
+    nr_exact <- N - sum(MC_flags)
+    timed_trees <- list()
+    comp_geno_vec <- list()
+    node_labels_vec <- list()
+    for (i in order(MC_flags)) {
+      tree <- trees[[i]]
+      tree$time_diffs <- numeric(0) # Initialize the time difference vector
+      if (!MC_flags[i]) { # if exact inference is needed
+        p <- build_poset(tree)
+        comp_geno_vec <- append(comp_geno_vec, list(compatible_genotypes(p)))
+        node_labels_vec <- append(node_labels_vec, list(get_node_labels(p)))
+      }
+      timed_trees <- append(timed_trees, list(tree))
+    }
+    rm(tree)
+    rm(trees)
+    rm(MC_flags)
+    
     if (verbose) {
       
       cat("Running hybrid EM/MCEM...\n")
@@ -103,7 +122,8 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
         # E-step
         cat("E-step...\n")
         start_time <- Sys.time()
-        timed_trees <- get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
+        update_timed_trees(n, N, timed_trees, Theta, lambda_s, M,
+                           comp_geno_vec, node_labels_vec, nr_exact)
         print(Sys.time() - start_time)
         
         # M-step
@@ -133,7 +153,8 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
       while ((round < iterations) && (reltol > 1e-6)) {
         
         # E-step
-        timed_trees <- get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
+        update_timed_trees(n, N, timed_trees, Theta, lambda_s, M,
+                           comp_geno_vec, node_labels_vec, nr_exact)
         
         # M-step
         optim_res <- optim(Theta, full_MHN_objective, full_MHN_grad, timed_trees,
@@ -161,10 +182,16 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
     if (verbose) {
       cat("Running MLE...\n")
     }
-    
+
     obj_grad_help <- obj_grad_helper(n, N, trees, Theta, lambda_s)
-    optim_res <- optim(Theta, obs_MHN_objective, obs_MHN_grad, n, N, lambda_s,
-                       trees, gamma, obj_grad_help, to_mask, weights, N_patients, smallest_tree_size,
+    tr_mat_vec <- obj_grad_help$tr_mat_vec
+    comp_geno_vec <- obj_grad_help$comp_geno_vec
+    node_labels_vec <- obj_grad_help$node_labels_vec
+    log_prob_vec <- obj_grad_help$log_prob_vec
+    rm(obj_grad_help)
+    optim_res <- optim(Theta, obs_MHN_objective, obs_MHN_grad, n, N, lambda_s, trees, 
+                       gamma, tr_mat_vec, log_prob_vec, comp_geno_vec, node_labels_vec,
+                       to_mask, weights, N_patients, smallest_tree_size,
                        method = "L-BFGS-B",
                        lower = -10, upper = 10,
                        control = list(fnscale = -1,
@@ -217,160 +244,25 @@ get_MC_flags <- function(N, n, trees, MC_threshold) {
 
 }
 
-##' get_timed_trees(n, N, trees, Theta, lambda_s, M, MC_flags)
-##' A function that computes the expected waiting times of all edges in a set of trees
-##' given a mutual hazard network
-##' @param n Number of events in the MHNs
-##' @param N Sample size
-##' @param trees Mutation tree structures
-##' @param Theta An n-by-n matrix representing the mutual hazard network
-##' @param lambda_s Rate of the sampling event
-##' @param M Number of Monte Carlo copies
-##' @param MC_flags A boolean vector indicating whether Monte Carlo sampling is used for each tree
-##' @return Timed trees
-get_timed_trees <- function(n, N, trees, Theta, lambda_s, M, MC_flags) {
 
-  timed_trees <- list()
-
-  # Loop through all trees
-  for (i in c(1:N)) {
-
-    tree <- trees[[i]]
-
-    if (MC_flags[i]) {  # Monte Carlo E-step for large trees
-
-      time_diffs <- tree_importance_sampling(Theta, tree$nodes, tree$children,
-                                             tree$in_tree, n, M, lambda_s)
-
-    } else { # Exact E-step for small trees
-
-      p <- build_poset(tree)
-      comp_geno <- compatible_genotypes(p)
-      node_labels <- get_node_labels(p)
-      time_diffs <- tree_E_step(Theta, n, lambda_s,
-                                tree$nodes, tree$children, tree$in_tree,
-                                comp_geno, node_labels)
-
-    }
-
-    tree$time_diffs <- time_diffs
-    timed_trees <- append(timed_trees, list(tree))
-
-  }
-
-  return(timed_trees)
-
-}
-
-full_MHN_objective <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, 
-                               weights, N_patients, smallest_tree_size = 1) {
-
-  score <- full_MHN_objective_(Theta, trees, gamma, n, N, lambda_s, to_mask, weights)
-  exp_Theta <- exp(matrix(Theta, nrow = n))
-  if (smallest_tree_size == 1) {
-    lambdas <- diag(exp_Theta)
-    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s))
-  }
-  if (smallest_tree_size == 2) {
-    lambdas <- diag(exp_Theta)
-    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s))
-  }
-
-  return(score)
-}
-
-full_MHN_grad <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, 
-                          weights, N_patients, smallest_tree_size = 1) {
-
-  gd <- full_MHN_grad_(Theta, trees, gamma, n, N, lambda_s, to_mask, weights)
-  exp_Theta <- exp(matrix(Theta, nrow = n))
-  if (smallest_tree_size == 1) {
-    lambdas <- diag(exp_Theta)
-    p_empty <- prob_empty_tree(lambdas, lambda_s)
-    diag(gd) <- diag(gd) - N_patients * p_empty^2 / lambda_s / (1 - p_empty + 1e-10) * lambdas
-  }
-  if (smallest_tree_size == 2) {
-    lambdas <- diag(exp_Theta)
-    p_empty <- prob_empty_tree(lambdas, lambda_s)
-    p_one <- prob_one_tree(n, exp_Theta, lambda_s)
-    gd <- gd - N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
-  }
-
-  return(gd)
-}
-
-obs_MHN_objective <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, 
-                              weights, N_patients, smallest_tree_size = 1) {
-
-  score <- obs_MHN_objective_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights)
-  exp_Theta <- exp(matrix(Theta, nrow = n))
-  if (smallest_tree_size == 1) {
-    lambdas <- diag(exp_Theta)
-    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s))
-  }
-  if (smallest_tree_size == 2) {
-    lambdas <- diag(exp_Theta)
-    score <- score - N_patients * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s))
-  }
-
-  return(score)
-}
-
-obs_MHN_grad <- function(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, 
-                         weights, N_patients, smallest_tree_size = 1) {
-
-  gd <- obs_MHN_grad_(Theta, n, N, lambda_s, trees, gamma, obj_grad_help, to_mask, weights)
-  exp_Theta <- exp(matrix(Theta, nrow = n))
-  if (smallest_tree_size == 1) {
-    lambdas <- diag(exp_Theta)
-    p_empty <- prob_empty_tree(lambdas, lambda_s)
-    diag(gd) <- diag(gd) - N_patients * p_empty^2 / lambda_s / (1 - p_empty + 1e-10) * lambdas
-  }
-  if (smallest_tree_size == 2) {
-    lambdas <- diag(exp_Theta)
-    p_empty <- prob_empty_tree(lambdas, lambda_s)
-    p_one <- prob_one_tree(n, exp_Theta, lambda_s)
-    gd <- gd - N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
-  }
-
-  return(gd)
-}
-
-
-prob_empty_tree <- function(lambdas, lambda_s) {
-  return(lambda_s / (lambda_s + sum(lambdas)))
-}
-
-prob_one_tree <- function(n, exp_Theta, lambda_s) {
-
-  p <- 0
-  sum_lambdas <- sum(diag(exp_Theta))
-  for (i in c(1:n)) {
-    temp_denom <- sum(sapply(setdiff(c(1:n),i), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,i])))
-    p <- p + exp_Theta[i,i] / (lambda_s + sum_lambdas) * lambda_s / (lambda_s + temp_denom)
-  }
-  return(p)
-
-}
-
-dp_one <- function(n, exp_Theta, lambda_s) {
-
-  sum_lambdas <- sum(diag(exp_Theta))
-  sum_all <- lambda_s + sum_lambdas
-  dp <- matrix(0, nrow = n, ncol = n)
-
-  for (i in c(1:n)) {
-    temp_denom_i <- sum(sapply(setdiff(c(1:n),i), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,i])))
-    dp[-i,i] <- - exp_Theta[i,i] / sum_all * lambda_s * diag(exp_Theta)[-i] / (lambda_s + temp_denom_i)^2
-
-    dp[i,i] <- lambda_s / (lambda_s + temp_denom_i) * (sum_all^(-1) - exp_Theta[i,i] * sum_all^(-2))
-    for (k in setdiff(c(1:n),i)) {
-      temp_denom_k <- sum(sapply(setdiff(c(1:n),k), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,k])))
-      dp[i,i] <- dp[i,i] - exp_Theta[k,k] * lambda_s *
-        (sum_all^(-2) * (lambda_s + temp_denom_k)^(-1) + sum_all^(-1) * (1 + exp_Theta[i,k]) * (lambda_s + temp_denom_k)^(-2))
-    }
-  }
-
-  return(dp)
-}
+# dp_one <- function(n, exp_Theta, lambda_s) {
+# 
+#   sum_lambdas <- sum(diag(exp_Theta))
+#   sum_all <- lambda_s + sum_lambdas
+#   dp <- matrix(0, nrow = n, ncol = n)
+# 
+#   for (i in c(1:n)) {
+#     temp_denom_i <- sum(sapply(setdiff(c(1:n),i), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,i])))
+#     dp[-i,i] <- - exp_Theta[i,i] / sum_all * lambda_s * diag(exp_Theta)[-i] / (lambda_s + temp_denom_i)^2
+# 
+#     dp[i,i] <- lambda_s / (lambda_s + temp_denom_i) * (sum_all^(-1) - exp_Theta[i,i] * sum_all^(-2))
+#     for (k in setdiff(c(1:n),i)) {
+#       temp_denom_k <- sum(sapply(setdiff(c(1:n),k), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,k])))
+#       dp[i,i] <- dp[i,i] - exp_Theta[k,k] * lambda_s *
+#         (sum_all^(-2) * (lambda_s + temp_denom_k)^(-1) + sum_all^(-1) * (1 + exp_Theta[i,k]) * (lambda_s + temp_denom_k)^(-2))
+#     }
+#   }
+# 
+#   return(dp)
+# }
 
