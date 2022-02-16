@@ -15,10 +15,7 @@ This document demonstrates how to use the `TreeMHN` package. The package is crea
 library(TreeMHN)
 library(corrplot)
 library(parallel)
-library(Matrix)
-library(DiagrammeR)
 library(ggplot2)
-library(dplyr)
 ```
 
 # 2 Simulated data
