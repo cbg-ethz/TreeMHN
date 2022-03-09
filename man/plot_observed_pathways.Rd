@@ -4,7 +4,14 @@
 \alias{plot_observed_pathways}
 \title{Plot most frequent observed pathways from a cohort of mutation trees}
 \usage{
-plot_observed_pathways(tree_obj, Theta, top_M = 10, lambda_s = 1, log2 = TRUE)
+plot_observed_pathways(
+  tree_obj,
+  Theta,
+  top_M = 10,
+  lambda_s = 1,
+  log2 = TRUE,
+  mutation_colors = NULL
+)
 }
 \arguments{
 \item{tree_obj}{A TreeMHN object.}
@@ -16,6 +23,8 @@ plot_observed_pathways(tree_obj, Theta, top_M = 10, lambda_s = 1, log2 = TRUE)
 \item{lambda_s}{Sampling rate (Default: 1)}
 
 \item{log2}{A boolean flag indicating whether the x axis is scaled by log2.}
+
+\item{mutation_colors}{A named vector with the color codes for all mutations (Default: NULL)}
 }
 \description{
 This function takes a cohort of mutation trees and the estimated

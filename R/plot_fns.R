@@ -179,7 +179,8 @@ next_mutation <- function(n, tree, Theta, mutations = NULL, tree_label = NULL, t
 ##' @author Xiang Ge Luo
 ##' @import ggplot2
 ##' @export
-plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, log2 = TRUE) {
+plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, 
+                                     log2 = TRUE, mutation_colors = NULL) {
   
   n <- nrow(Theta)
   pathway_df <- Theta_to_pathways_w_sampling(Theta, top_M, lambda_s)
@@ -220,6 +221,10 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
     g <- g + scale_x_continuous(trans='log2')
   }
   
+  if (!is.null(mutation_colors)) {
+    g <- g + scale_fill_manual(values = mutation_colors)
+  }
+  
   return(g)
 }
 
@@ -233,14 +238,17 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
 ##' @param top_M Number of most frequent pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
 ##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
+##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @author Xiang Ge Luo
-##' @import ggplot2
 ##' @export
-plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, log2 = TRUE) {
+plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, 
+                                   log2 = TRUE, mutation_colors = NULL) {
   
   n <- nrow(Theta)
   mutations <- tree_obj$mutations
-  pathway_df <- get_observed_pathways(tree_obj)[c(1:top_M),]
+  
+  pathway_df <- get_observed_pathways(tree_obj)
+  pathway_df <- pathway_df[c(1:top_M),]
   pathway_df$probs <- pathway_df$probs*100 
   
   waiting_time <- c()
@@ -253,7 +261,7 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, lo
     times <- rep(0, length(p))
     for (j in c(1:length(p))) {
       pp <- p[c(1:j)]
-      denom_set <- get_children(n, pp[-length(pp)])
+      denom_set <- TreeMHN:::get_children(n, pp[-length(pp)])
       denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
       times[j] <- 1 / denom
     }
@@ -264,7 +272,7 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, lo
   
   g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
     geom_label(aes(fill = factor(labels))) +
-    xlab("Expected waiting time relative to the sampling rate") + ylab("Probability") +
+    xlab("Expected waiting time relative to the sampling rate") + ylab("Relative frequency") +
     theme_classic() + guides(fill="none") +
     theme(axis.line.y = element_blank(),
           axis.ticks.y = element_blank(),
@@ -276,6 +284,10 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, lo
   
   if (log2) {
     g <- g + scale_x_continuous(trans='log2')
+  }
+  
+  if (!is.null(mutation_colors)) {
+    g <- g + scale_fill_manual(values = mutation_colors)
   }
   
   return(g)

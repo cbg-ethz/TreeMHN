@@ -399,7 +399,9 @@ get_observed_pathways <- function(tree_obj) {
   
   pathways <- c()
   
-  for (tree in tree_obj$trees) {
+  trees <- tree_obj$trees
+  
+  for (tree in trees) {
     pathways <- c(pathways, unlist(pathway_helper(tree)))
   }
   
@@ -407,8 +409,7 @@ get_observed_pathways <- function(tree_obj) {
     group_by_all() %>%
     summarise(count = n()) %>%
     mutate(probs = count / sum(count)) %>%
-    arrange(desc(count)) %>%
-    select(!count)
+    arrange(desc(count))
   
   return(df)
   

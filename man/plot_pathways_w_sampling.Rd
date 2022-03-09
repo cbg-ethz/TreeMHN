@@ -9,7 +9,8 @@ plot_pathways_w_sampling(
   mutations,
   top_M = 10,
   lambda_s = 1,
-  log2 = TRUE
+  log2 = TRUE,
+  mutation_colors = NULL
 )
 }
 \arguments{
