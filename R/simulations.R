@@ -21,19 +21,6 @@ random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
   diag(Theta) <- sample(c(runif(ceiling(n/2), -3, -1), runif(floor(n/2), -6, -3)))
   Theta[exclusive] <- - rgamma(length(exclusive), 4, 2.5)
   Theta[cooccur] <- rgamma(length(cooccur), 4, 2.5)
-  # switch(as.character(sim_setup),
-  #        "1" = {
-  #          # Setup 1: hyper parameters estimated from real data
-  #          diag(Theta) <- sample(c(runif(ceiling(n/2), -3, -1), runif(floor(n/2), -6, -3)))
-  #          Theta[exclusive] <- - rgamma(length(exclusive), 4, 2.5)
-  #          Theta[cooccur] <- rgamma(length(cooccur), 4, 2.5)
-  #        },
-  #        "2" = {
-  #          # Setup 2:
-  #          diag(Theta) <- sort(rnorm(100,-2,1))[c(1:n)]
-  #          temp <- rnorm(length(nonZeros),0,3)
-  #          Theta[nonZeros] <- sapply(temp, function (x) ifelse(abs(x) > 0.1, x, runif(1,0.1,1) * sign(x)))
-  #        })
 
   return(round(Theta, 2))
 }
@@ -244,6 +231,7 @@ perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 perturb_tree <- function(n, one_tree_df, epsilon = 0.05) {
 
   nr_nodes <- nrow(one_tree_df)
+  patient_id <- one_tree_df$Patient_ID[1]
   tree_id <- one_tree_df$Tree_ID[1]
   node_to_remove <- c()
 
@@ -262,13 +250,15 @@ perturb_tree <- function(n, one_tree_df, epsilon = 0.05) {
                switch(as.character(sample.int(4,1)), #randomly select one of the three cases
                       "1" = { #add a parent
                         one_tree_df$Parent_ID[i] <- nrow(one_tree_df) + 1
-                        one_tree_df <- rbind(one_tree_df, data.frame(Tree_ID = tree_id,
+                        one_tree_df <- rbind(one_tree_df, data.frame(Patient_ID = patient_id,
+                                                                     Tree_ID = tree_id,
                                                                      Node_ID = nrow(one_tree_df) + 1,
                                                                      Mutation_ID = sample.int(n,1),
                                                                      Parent_ID = parent))
                       },
                       "2" = { #add a child
-                        one_tree_df <- rbind(one_tree_df, data.frame(Tree_ID = tree_id,
+                        one_tree_df <- rbind(one_tree_df, data.frame(Patient_ID = patient_id,
+                                                                     Tree_ID = tree_id,
                                                                      Node_ID = nrow(one_tree_df) + 1,
                                                                      Mutation_ID = sample.int(n,1),
                                                                      Parent_ID = node_id))
@@ -299,13 +289,15 @@ perturb_tree <- function(n, one_tree_df, epsilon = 0.05) {
                switch(as.character(sample.int(4,1)),
                       "1" = { #add a parent
                         one_tree_df$Parent_ID[i] <- nrow(one_tree_df) + 1
-                        one_tree_df <- rbind(one_tree_df, data.frame(Tree_ID = tree_id,
+                        one_tree_df <- rbind(one_tree_df, data.frame(Patient_ID = patient_id,
+                                                                     Tree_ID = tree_id,
                                                                      Node_ID = nrow(one_tree_df) + 1,
                                                                      Mutation_ID = sample.int(n,1),
                                                                      Parent_ID = parent))
                       },
                       "2" = { #add a child
-                        one_tree_df <- rbind(one_tree_df, data.frame(Tree_ID = tree_id,
+                        one_tree_df <- rbind(one_tree_df, data.frame(Patient_ID = patient_id,
+                                                                     Tree_ID = tree_id,
                                                                      Node_ID = nrow(one_tree_df) + 1,
                                                                      Mutation_ID = sample.int(n,1),
                                                                      Parent_ID = node_id))
@@ -331,13 +323,15 @@ perturb_tree <- function(n, one_tree_df, epsilon = 0.05) {
                switch(as.character(sample.int(2,1)),
                       "1" = { #add a parent
                         one_tree_df$Parent_ID[i] <- nrow(one_tree_df) + 1
-                        one_tree_df <- rbind(one_tree_df, data.frame(Tree_ID = tree_id,
+                        one_tree_df <- rbind(one_tree_df, data.frame(Patient_ID = patient_id,
+                                                                     Tree_ID = tree_id,
                                                                      Node_ID = nrow(one_tree_df) + 1,
                                                                      Mutation_ID = sample.int(n,1),
                                                                      Parent_ID = parent))
                       },
                       "2" = { #add a child
-                        one_tree_df <- rbind(one_tree_df, data.frame(Tree_ID = tree_id,
+                        one_tree_df <- rbind(one_tree_df, data.frame(Patient_ID = patient_id,
+                                                                     Tree_ID = tree_id,
                                                                      Node_ID = nrow(one_tree_df) + 1,
                                                                      Mutation_ID = sample.int(n,1),
                                                                      Parent_ID = node_id))
