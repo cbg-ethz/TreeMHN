@@ -19,6 +19,8 @@ Imports:
     DiagrammeR,
     ggplot2,
     dplyr,
-    ggm
+    ggm,
+    reshape2,
+    gridExtra
 biocViews:
     Rgraphviz
