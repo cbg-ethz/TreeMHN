@@ -205,43 +205,16 @@ save(AML_Theta, file = "AML_Theta.RData")
 
 ## 3.3 Plot the network
 
-Now we can plot the learned MHN.
+Now we can plot the learned MHN. The diagonal entries represent the baseline rates of mutations to occur, independent of other events. The off-diagonal entries represent the interactions between mutations.
 
-```{r}
-par(mfrow = c(1,1))
-dimnames(AML_Theta) <- list(AML$mutations, AML$mutations)
-idx <- order(diag(AML_Theta), decreasing = TRUE)
-temp <- AML_Theta
-diag(temp) <- 0
-Theta_diag <- matrix(diag(AML_Theta)[idx], ncol = 1)
-rownames(Theta_diag) <- AML$mutations[idx]
-colnames(Theta_diag) <- c(" ")
-```
-
-The diagonal entries represent the baseline rates of mutations to occur, independent of other events:
-
-```{r, fig.height=8, fig.width=8}
-col1 <- colorRampPalette(c('white', 'purple')) 
-corrplot(Theta_diag, is.corr = FALSE, cl.pos = 'r', tl.col = 'black', cl.ratio = 2, cl.offset = 5, col = col1(100))
-```
-
-The off-diagonal entries represent the interactions between mutations:
-
-```{r, fig.height=8, fig.width=8}
-corrplot(temp[idx,idx], is.corr = FALSE, tl.col = 'black')
+```{r, fig.height=8, fig.width=10}
+plot_Theta(AML_Theta, AML$mutations)
 ```
 
 If we focus on the entries with non-zero off-diagonal entries, we get:
 
 ```{r, fig.height=8, fig.width=8}
-par(mfrow = c(1,1))
-to_show <- sapply(c(1:AML$n), function (i) any(AML_Theta[i,-i] != 0) || any(AML_Theta[-i,i] != 0))
-to_show_mat <- AML_Theta[to_show,to_show]
-dimnames(to_show_mat) <- list(AML$mutations[to_show],AML$mutations[to_show])
-to_show_idx <- order(diag(to_show_mat),decreasing = TRUE)
-diag(to_show_mat) <- 0
-corrplot(round(to_show_mat[to_show_idx,to_show_idx],2), is.corr = FALSE,
-         tl.col = "black",tl.pos = "d",tl.cex = 0.66)
+plot_Theta(AML_Theta, AML$mutations, full = FALSE)
 ```
 
 Given the estimated MHN, we can plot the most probable evolutionary trajectories of a given length using the `plot_pathways` function. Here we choose length $4$.

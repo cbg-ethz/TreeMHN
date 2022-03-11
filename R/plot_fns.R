@@ -367,7 +367,9 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE) {
     ggplot(temp, aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) + 
       geom_label(data = temp %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
-                 mapping = aes(label = text), size = 2) +
+                 mapping = aes(label = text), 
+                 size = 2.5,
+                 label.padding = unit(0.1, "lines")) +
       scale_fill_gradient2(n.breaks = 6) + rremove("xlab") + rremove("ylab")  +
       scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
       theme(axis.text.x=element_blank(),
