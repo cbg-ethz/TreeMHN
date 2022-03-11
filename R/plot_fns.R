@@ -106,7 +106,7 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 
 }
 
-##' @name next_mutation
+##' @name plot_next_mutations
 ##' @title Plot the next most probable mutational events
 ##' @description Given a particular tree and a Mutual Hazard Network, this function 
 ##' finds the next most probable mutational events.
@@ -117,7 +117,7 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 ##' @param tree_label The title of the tree (Default: NULL).
 ##' @param top_M Number of most probable mutational events to plot (Default: 1).
 ##' @export
-next_mutation <- function(n, tree, Theta, mutations = NULL, tree_label = NULL, top_M = 1) {
+plot_next_mutations <- function(n, tree, Theta, mutations = NULL, tree_label = NULL, top_M = 1) {
 
   if (is.null(mutations)) {
     mutations <- as.character(seq(1,n))

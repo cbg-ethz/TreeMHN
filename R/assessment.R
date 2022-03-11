@@ -415,3 +415,45 @@ get_observed_pathways <- function(tree_obj) {
   
 }
 
+##' @import dplyr
+get_next_mutations <- function(tree, Theta, mutations = NULL) {
+  
+  n <- nrow(Theta)
+  
+  if (is.null(mutations)) {
+    mutations <- as.character(seq(1,n))
+  } else {
+    if (length(mutations) != n) {
+      stop("The number of mutations doesn't match matrix dimension. Please check again...")
+    } else if (length(unique(mutations)) != n) {
+      stop("Mutation names must be unique. Please check again...")
+    }
+  }
+  
+  next_mutations <- which(tree$in_tree == FALSE)
+  nr_next_mutations <- length(next_mutations)
+  next_lambdas <- rep(0, nr_next_mutations)
+  pathways <- rep("", nr_next_mutations)
+  last_mutations <- rep("", nr_next_mutations)
+  
+  for (i in c(1:nr_next_mutations)) {
+    
+    pos <- next_mutations[i]
+    node <- get_pathway(tree$nodes, pos, tree$parents)
+    next_lambdas[i] <- get_lambda(node, Theta)
+    pathways[i] <- paste(c("Root", mutations[node]), collapse = "->")
+    last_mutations[i] <- mutations[tree$nodes[pos]]
+    
+  }
+  
+  df <- data.frame(pathways, last_mutations, next_lambdas) %>%
+    mutate(probs = next_lambdas / sum(next_lambdas)) %>%
+    select(!next_lambdas) %>%
+    arrange(desc(probs)) %>%
+    mutate(rank = seq(1, nr_next_mutations))
+  
+  return(df)
+  
+}
+
+

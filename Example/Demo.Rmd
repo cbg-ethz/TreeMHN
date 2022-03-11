@@ -250,9 +250,9 @@ Given the estimated MHN, we can plot the most probable evolutionary trajectories
 plot_pathways(AML_Theta, mutations = AML$mutations, n_order = 4, top_M = 10)
 ```
 
-Given a particular tree and the estimated MHN, we can also find the next most probable mutational events using the `next_mutation` function.
+Given a particular tree and the estimated MHN, we can also find the next most probable mutational events using the `plot_next_mutations` function.
 
 ```{r}
-next_mutation(AML$n, AML$trees[[21]], AML_Theta, mutations = AML$mutations, tree_label = "AML-38-001", top_M = 6)
+plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, mutations = AML$mutations, tree_label = "AML-38-001", top_M = 6)
 ```
 
