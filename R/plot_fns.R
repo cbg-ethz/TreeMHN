@@ -305,7 +305,6 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1,
 ##' @import ggplot2
 ##' @importFrom gridExtra grid.arrange
 ##' @importFrom reshape2 melt
-##' @importFrom ggpubr rremove
 ##' @export
 plot_Theta <- function(Theta, mutations = NULL, full = TRUE) {
   
@@ -335,22 +334,24 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE) {
     g1 <- melt(Theta_diag) %>%
       ggplot(aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) +
-      scale_fill_gradient(low = "white", high = colors()[77], n.breaks = 6) + 
-      rremove("xlab") + rremove("ylab") +
+      scale_fill_gradient(low = "white", high = colors()[77], n.breaks = 6) +
       scale_y_discrete(limits=rev) +
       theme(axis.text.x=element_blank(),
             axis.ticks=element_blank(),
-            legend.title = element_blank())
+            legend.title = element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank())
     
     g2 <- melt(Theta_no_diag[idx, idx]) %>%
       ggplot(aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) +
-      scale_fill_gradient2(n.breaks = 6) + 
-      rremove("xlab") + rremove("ylab") +
+      scale_fill_gradient2(n.breaks = 6) +
       scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
       theme(axis.text.x=element_text(angle=45, hjust = 0.2, vjust = 0.1),
             axis.ticks=element_blank(),
-            legend.title = element_blank())
+            legend.title = element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank())
     
     grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(1,6))
     
@@ -370,12 +371,14 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE) {
                  mapping = aes(label = text), 
                  size = 2.5,
                  label.padding = unit(0.1, "lines")) +
-      scale_fill_gradient2(n.breaks = 6) + rremove("xlab") + rremove("ylab")  +
+      scale_fill_gradient2(n.breaks = 6) +
       scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
       theme(axis.text.x=element_blank(),
             axis.text.y=element_blank(),
             axis.ticks=element_blank(),
-            legend.title = element_blank())
+            legend.title = element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank())
     
   }
   
