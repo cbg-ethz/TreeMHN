@@ -292,3 +292,90 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1,
   
   return(g)
 }
+
+##' @name plot_Theta
+##' @title Plot a Mutual Hazard Network
+##' @description This function plots a Mutual Hazard Network by separating the 
+##' diagonal entries from the off-diagonal entries.
+##' @param Theta An n-by-n matrix representing a Mutual Hazard Network.
+##' @param mutations A list of mutation names, which must be unique values.
+##' If no names are given, then the mutation IDs will be used.
+##' @param full A boolean flag indicating whether the full MHN is shown (default: TRUE).
+##' If not, then only mutations with non-zero off-diagonal entries will be shown.
+##' @import ggplot2
+##' @importFrom gridExtra grid.arrange
+##' @importFrom reshape2 melt
+##' @importFrom ggpubr rremove
+##' @export
+plot_Theta <- function(Theta, mutations = NULL, full = TRUE) {
+  
+  n <- nrow(Theta)
+  
+  if (is.null(mutations)) {
+    mutations <- as.character(seq(1,n))
+  } else {
+    if (length(mutations) != n) {
+      stop("The number of mutations doesn't match matrix dimension. Please check again...")
+    } else if (length(unique(mutations)) != n) {
+      stop("Mutation names must be unique. Please check again...")
+    }
+  }
+  
+  dimnames(Theta) <- list(mutations, mutations)
+  idx <- order(diag(Theta), decreasing = TRUE)
+  
+  if (full) {
+    
+    Theta_no_diag <- Theta
+    diag(Theta_no_diag) <- 0
+    Theta_diag <- matrix(diag(Theta)[idx], ncol = 1)
+    rownames(Theta_diag) <- mutations[idx]
+    colnames(Theta_diag) <- c("temp")
+    
+    g1 <- melt(Theta_diag) %>%
+      ggplot(aes(x = Var2, y = Var1)) + 
+      geom_raster(aes(fill=value)) +
+      scale_fill_gradient(low = "white", high = colors()[77], n.breaks = 6) + 
+      rremove("xlab") + rremove("ylab") +
+      scale_y_discrete(limits=rev) +
+      theme(axis.text.x=element_blank(),
+            axis.ticks=element_blank(),
+            legend.title = element_blank())
+    
+    g2 <- melt(Theta_no_diag[idx, idx]) %>%
+      ggplot(aes(x = Var2, y = Var1)) + 
+      geom_raster(aes(fill=value)) +
+      scale_fill_gradient2(n.breaks = 6) + 
+      rremove("xlab") + rremove("ylab") +
+      scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
+      theme(axis.text.x=element_text(angle=45, hjust = 0.2, vjust = 0.1),
+            axis.ticks=element_blank(),
+            legend.title = element_blank())
+    
+    grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(1,6))
+    
+    
+  } else {
+    
+    to_show <- sapply(c(1:n), function (i) any(Theta[i,-i] != 0) || any(Theta[-i,i] != 0))
+    to_show_mat <- Theta[to_show,to_show]
+    dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
+    to_show_idx <- order(diag(to_show_mat),decreasing = TRUE)
+    diag(to_show_mat) <- 0
+    
+    temp <- melt(to_show_mat[to_show_idx,to_show_idx])
+    ggplot(temp, aes(x = Var2, y = Var1)) + 
+      geom_raster(aes(fill=value)) + 
+      geom_label(data = temp %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
+                 mapping = aes(label = text), size = 2) +
+      scale_fill_gradient2(n.breaks = 6) + rremove("xlab") + rremove("ylab")  +
+      scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
+      theme(axis.text.x=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks=element_blank(),
+            legend.title = element_blank())
+    
+  }
+  
+}
+
