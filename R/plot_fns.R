@@ -14,7 +14,7 @@ plot_tree <- function(tree, mutations, tree_label = NULL) {
   graph_dot <- "
   digraph g {
   labelloc='t';
-  fontname='Helvetica bold';
+  fontname='Arial';
   fontsize=28;
   "
 
@@ -30,7 +30,10 @@ plot_tree <- function(tree, mutations, tree_label = NULL) {
   node_idx <- c(1:length(tree$nodes))[tree$in_tree]
   node_labels <- c("Root", mutations[tree$nodes[tree$in_tree][-1]])
   for (i in c(1:nr_nodes)) {
-    graph_dot <- paste(graph_dot, node_idx[i], "[label = '", node_labels[i], "'];")
+    graph_dot <- paste(graph_dot, 
+                       node_idx[i], 
+                       "[label = '", node_labels[i], 
+                       "', fontname='Arial'];")
   }
 
   # Add edges
@@ -222,6 +225,8 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
   }
   
   if (!is.null(mutation_colors)) {
+    
+    names(mutation_colors) <- mutations
     g <- g + scale_fill_manual(values = mutation_colors)
   }
   
@@ -354,7 +359,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
             axis.title.x=element_blank(),
             axis.title.y=element_blank())
     
-    grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(1,6))
+    grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(2,6))
     
     
   } else {
