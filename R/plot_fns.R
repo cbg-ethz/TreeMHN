@@ -307,16 +307,19 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1,
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param full A boolean flag indicating whether the full MHN is shown (default: TRUE).
 ##' If not, then only mutations with non-zero off-diagonal entries will be shown.
+##' @param sort_diag A boolean flag indicating whether the rows and columns of the MHN are
+##' sorted based on the decreasing order of the diagonal entries (default: TRUE).
+##' @param to_show A vector indicating which rows and columns of the MHN are shown (default: NULL).
 ##' @import ggplot2
 ##' @importFrom gridExtra grid.arrange
 ##' @importFrom reshape2 melt
 ##' @export
-plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
+plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, to_show = NULL) {
   
   n <- nrow(Theta)
   
   if (is.null(mutations)) {
-    mutations <- as.character(seq(1,n))
+    mutations <- sapply(c(1:n), function(x) paste0("V", x))
   } else {
     if (length(mutations) != n) {
       stop("The number of mutations doesn't match matrix dimension. Please check again...")
@@ -326,7 +329,12 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
   }
   
   dimnames(Theta) <- list(mutations, mutations)
-  idx <- order(diag(Theta), decreasing = TRUE)
+  
+  if (sort_diag) {
+    idx <- order(diag(Theta), decreasing = TRUE)
+  } else {
+    idx <- c(1:n)
+  }
   
   if (full) {
     
@@ -359,7 +367,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
             axis.title.x=element_blank(),
             axis.title.y=element_blank())
     
-    grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(2,6))
+    G <- grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(2,6))
     
     
   } else {
@@ -368,9 +376,16 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
       to_show <- sapply(c(1:n), function (i) any(Theta[i,-i] != 0) || any(Theta[-i,i] != 0))
       to_show_mat <- Theta[to_show, to_show]
       dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
-      to_show_idx <- order(diag(to_show_mat), decreasing = TRUE)
-      diag(to_show_mat) <- 0
-      temp <- melt(to_show_mat[to_show_idx, to_show_idx])
+      
+      if (sort_diag) {
+        to_show_idx <- order(diag(to_show_mat), decreasing = TRUE)
+        diag(to_show_mat) <- 0
+        temp <- melt(to_show_mat[to_show_idx, to_show_idx])
+      } else {
+        diag(to_show_mat) <- 0
+        temp <- melt(to_show_mat)
+      }
+      
     } else {
       to_show_mat <- Theta[to_show, to_show]
       dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
@@ -378,7 +393,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
       temp <- melt(to_show_mat)
     }
     
-    ggplot(temp, aes(x = Var2, y = Var1)) + 
+    G <- ggplot(temp, aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) + 
       geom_label(data = temp %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
                  mapping = aes(label = text), 
@@ -394,6 +409,8 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, to_show = NULL) {
             axis.title.y=element_blank())
     
   }
+  
+  return(G)
   
 }
 

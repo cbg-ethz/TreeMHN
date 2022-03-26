@@ -4,7 +4,13 @@
 \alias{plot_Theta}
 \title{Plot a Mutual Hazard Network}
 \usage{
-plot_Theta(Theta, mutations = NULL, full = TRUE, to_show = NULL)
+plot_Theta(
+  Theta,
+  mutations = NULL,
+  full = TRUE,
+  sort_diag = TRUE,
+  to_show = NULL
+)
 }
 \arguments{
 \item{Theta}{An n-by-n matrix representing a Mutual Hazard Network.}
@@ -14,6 +20,11 @@ If no names are given, then the mutation IDs will be used.}
 
 \item{full}{A boolean flag indicating whether the full MHN is shown (default: TRUE).
 If not, then only mutations with non-zero off-diagonal entries will be shown.}
+
+\item{sort_diag}{A boolean flag indicating whether the rows and columns of the MHN are
+sorted based on the decreasing order of the diagonal entries (default: TRUE).}
+
+\item{to_show}{A vector indicating which rows and columns of the MHN are shown (default: NULL).}
 }
 \description{
 This function plots a Mutual Hazard Network by separating the 
