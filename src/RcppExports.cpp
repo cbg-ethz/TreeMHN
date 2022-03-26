@@ -156,17 +156,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parse_trees
-List parse_trees(std::string path);
-RcppExport SEXP _TreeMHN_parse_trees(SEXP pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(parse_trees(path));
-    return rcpp_result_gen;
-END_RCPP
-}
 // get_lambda
 double get_lambda(std::vector<int> node, const arma::mat& Theta);
 RcppExport SEXP _TreeMHN_get_lambda(SEXP nodeSEXP, SEXP ThetaSEXP) {
@@ -189,7 +178,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_TreeMHN_obs_MHN_objective", (DL_FUNC) &_TreeMHN_obs_MHN_objective, 14},
     {"_TreeMHN_obs_MHN_grad", (DL_FUNC) &_TreeMHN_obs_MHN_grad, 14},
     {"_TreeMHN_get_augmented_trees", (DL_FUNC) &_TreeMHN_get_augmented_trees, 2},
-    {"_TreeMHN_parse_trees", (DL_FUNC) &_TreeMHN_parse_trees, 1},
     {"_TreeMHN_get_lambda", (DL_FUNC) &_TreeMHN_get_lambda, 2},
     {NULL, NULL, 0}
 };

@@ -33,10 +33,6 @@ get_augmented_trees <- function(n, trees) {
     .Call(`_TreeMHN_get_augmented_trees`, n, trees)
 }
 
-parse_trees <- function(path) {
-    .Call(`_TreeMHN_parse_trees`, path)
-}
-
 get_lambda <- function(node, Theta) {
     .Call(`_TreeMHN_get_lambda`, node, Theta)
 }

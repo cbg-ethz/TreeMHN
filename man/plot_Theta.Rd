@@ -4,7 +4,7 @@
 \alias{plot_Theta}
 \title{Plot a Mutual Hazard Network}
 \usage{
-plot_Theta(Theta, mutations = NULL, full = TRUE)
+plot_Theta(Theta, mutations = NULL, full = TRUE, to_show = NULL)
 }
 \arguments{
 \item{Theta}{An n-by-n matrix representing a Mutual Hazard Network.}
