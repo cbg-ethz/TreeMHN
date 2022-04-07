@@ -309,11 +309,11 @@ double obs_MHN_objective(const arma::vec &Theta, const int &n, const int &N,
   arma::vec lambdas = exp_Theta.diag(0);
   
   if (smallest_tree_size == 1) {
-    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s));
+    log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s));
   }
   
   if (smallest_tree_size == 2) {
-    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s)) - prob_one_tree(n, exp_Theta, lambda_s);
+    log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s));
   }
   
   return log_score;
@@ -363,7 +363,7 @@ arma::mat obs_MHN_grad(const arma::vec &Theta, const int &n, const int &N,
   double p_empty = prob_empty_tree(lambdas, lambda_s);
   
   if (smallest_tree_size >= 1) {
-    Theta_grad.diag(0) -= N_patients * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+    Theta_grad.diag(0) -= sum(weights) * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
   }
   
   // if (smallest_tree_size == 2) {
