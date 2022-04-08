@@ -333,7 +333,11 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
   if (sort_diag) {
     idx <- order(diag(Theta), decreasing = TRUE)
   } else {
-    idx <- c(1:n)
+      idx <- c(1:n)
+  }
+  
+  if (!is.null(to_show)) {
+    idx <- to_show
   }
   
   if (full) {

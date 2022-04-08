@@ -3,24 +3,17 @@ is created based on the article “Joint inference of repeated
 evolutionary trajectories and patterns of clonal exclusivity or
 co-occurrence from tumor mutation trees”.
 
-1 Load required packages
-========================
+# 1 Load required packages
 
 ``` r
 library(TreeMHN)
-library(corrplot)
 library(parallel)
-library(Matrix)
-library(DiagrammeR)
 library(ggplot2)
-library(dplyr)
 ```
 
-2 Simulated data
-================
+# 2 Simulated data
 
-2.1 Generate trees
-------------------
+## 2.1 Generate trees
 
 The function `generate_trees` can generate a random Mutual Hazard
 Network *Θ* and a set of mutation trees from *Θ* according to the tree
@@ -49,10 +42,9 @@ tree <- trees[[77]]
 plot_tree(tree, tree_obj$mutations)
 ```
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](Demo_files/figure-gfm/display_one_tree-1.png)<!-- -->
 
-2.2 Learn MHN from the generated trees
---------------------------------------
+## 2.2 Learn MHN from the generated trees
 
 The function `learn_MHN` takes a `TreeMHN` object and learns an MHN *Θ̂*.
 
@@ -109,12 +101,7 @@ TreeMHN_to_mask <- get_mask(n, SS_res)
 pred_Theta_w_SS <- learn_MHN(tree_obj, gamma = gamma, to_mask = TreeMHN_to_mask)
 ```
 
-    ## Initializing Theta...
-    ## Checking whether MCEM is needed...
-    ## Running MLE...
-
-2.3 Performance assessment
---------------------------
+## 2.3 Performance assessment
 
 We first plot the true MHN and the two estimated MHNs by ordering the
 entries based on the true baseline rates. At a regularization level
@@ -125,32 +112,21 @@ With stability selection, we see that those entries are removed, along
 with some true positive entries at the lower left corner.
 
 ``` r
-par(mfrow = c(1,3))
-col.lim.up <- max(max(true_Theta),max(pred_Theta),max(pred_Theta_w_SS))
-col.lim.lo <- min(min(true_Theta),min(pred_Theta),min(pred_Theta_w_SS))
 idx <- order(diag(true_Theta),decreasing = TRUE)
-corrplot(true_Theta[idx,idx],
-         col.lim = c(col.lim.lo,col.lim.up), is.corr = FALSE, 
-         title = "True MHN", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
-corrplot(pred_Theta[idx,idx],
-         col.lim = c(col.lim.lo,col.lim.up), is.corr = FALSE, 
-         title = "TreeMHN", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
-corrplot(pred_Theta_w_SS[idx,idx],
-         col.lim = c(col.lim.lo,col.lim.up), is.corr = FALSE, 
-         title = "TreeMHN with stability selection", tl.col = "darkgrey", mar = c(1, 1, 1, 1))
+top_idx <- idx[c(1:(n/2))]
 ```
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](Demo_files/figure-gfm/theta_plots2-1.png)<!-- -->
 
 We can compute the precision and recall (= true positive rate) based on
 the off-diagonal differences using function `compare_Theta`. (See the
 Supplementary Material for more details.)
 
-| *Θ* (left) *Θ̂* (top) | *i* *j* | *i* → *j* | *i* ⊣ *j* |
-|----------------------|---------|-----------|-----------|
-| *i* *j*              | TN      | FP        | FP        |
-| *i* → *j*            | FN      | TP        | FP        |
-| *i* ⊣ *j*            | FN      | FP        | TP        |
+| *Θ* (left) *Θ̂* (top) | *i*  *j* | *i* → *j* | *i* ⊣ *j* |
+|----------------------|----------|-----------|-----------|
+| *i*  *j*             | TN       | FP        | FP        |
+| *i* → *j*            | FN       | TP        | FP        |
+| *i* ⊣ *j*            | FN       | FP        | TP        |
 
 -   Without stability selection:
 
@@ -172,7 +148,7 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
     ##     30.00     15.00      0.00     45.00     30.00      1.00      0.33      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.71
+    ##      0.00      0.70
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -180,7 +156,6 @@ we can see an increase in recall/TPR.
 -   Without stability selection:
 
 ``` r
-top_idx <- idx[c(1:(n/2))]
 compare_Theta(true_Theta[top_idx,top_idx], pred_Theta[top_idx,top_idx])
 ```
 
@@ -198,23 +173,24 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta_w_SS[top_idx,top_idx])
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
     ##      0.00     11.00      0.00      9.00      0.00      1.00      1.00      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.12
+    ##      0.00      0.16
 
-3 Real data
-===========
+# 3 Real data
 
-3.1 Input dataset
------------------
+## 3.1 Input dataset
 
 Here we use the tree dataset from [Morita et
 al. (2020)](https://www.nature.com/articles/s41467-020-19119-8).
 
 ``` r
+# note that we summarize the mutations at the gene level
 load("AML_tree_obj.RData")
-plot_tree(AML$trees[[21]], mutations = AML$mutations, tree_label = "AML-38-001") # note that we summarize the mutations at the gene level
+plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]], 
+          mutations = AML$mutations, 
+          tree_label = "AML-38-001") 
 ```
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-12-1.png)
+![](Demo_files/figure-gfm/read_AML-1.png)<!-- -->
 
 To use another dataset, please make sure it is in dataframe format with
 four columns:
@@ -237,32 +213,30 @@ For example,
 head(AML$tree_df)
 ```
 
-    ##   Patient_ID Tree_ID Node_ID Mutation_ID Parent_ID
-    ## 1          1       1       1           0         1
-    ## 2          1       1       2           1         1
-    ## 3          1       1       3           2         5
-    ## 4          1       1       4           3         5
-    ## 5          1       1       5           4         2
-    ## 6          1       1       6           5         5
+    ##    Patient_ID Tree_ID Node_ID Mutation_ID Parent_ID
+    ## 11          1       1       1           0         1
+    ## 21          1       1       2           4         1
+    ## 6           1       1       3           2         2
+    ## 31          1       1       4           1         3
+    ## 41          1       1       5           1         3
+    ## 51          1       1       6           5         3
 
 To convert a dataframe to an `TreeMHN` object, use the `input_tree_df`
 function. For example,
 
 ``` r
 # not run
-# input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
+input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
 ```
 
-3.2 Learn the MHN
------------------
+## 3.2 Learn the MHN
 
-To ensure enough precision, we run stability selection with *γ* = 0.05
+To ensure enough precision, we run stability selection with *γ* = 0.1
 and a threshold of 99% and obtain a vector of non-selected elements over
 1000 subsamples. Again, we recommend to run the code using the
 `parallel` package on a cluster.
 
 ``` r
-# set.seed(123)
 RNGkind("L'Ecuyer-CMRG")
 gamma <- 0.05
 subsample_size <- floor(AML$N / 2)
@@ -277,92 +251,64 @@ elements.
 AML_Theta <- learn_MHN(AML, gamma = gamma, to_mask = to_mask)
 ```
 
-    ## Initializing Theta...
-    ## Checking whether MCEM is needed...
-    ## Running MLE...
-
 ``` r
 save(AML_Theta, file = "AML_Theta.RData")
 ```
 
-3.3 Plot the network
---------------------
+## 3.3 Plot the network
 
-Now we can plot the learned MHN.
-
-``` r
-par(mfrow = c(1,1))
-dimnames(AML_Theta) <- list(AML$mutations, AML$mutations)
-idx <- order(diag(AML_Theta), decreasing = TRUE)
-temp <- AML_Theta
-diag(temp) <- 0
-Theta_diag <- matrix(diag(AML_Theta)[idx], ncol = 1)
-rownames(Theta_diag) <- AML$mutations[idx]
-colnames(Theta_diag) <- c(" ")
-```
-
-The diagonal entries represent the baseline rates of mutations to occur,
-independent of other events:
+Now we can plot the learned MHN. The diagonal entries represent the
+baseline rates of mutations to occur, independent of other events. The
+off-diagonal entries represent the interactions between mutations.
 
 ``` r
-col1 <- colorRampPalette(c('white', 'purple')) 
-corrplot(Theta_diag, is.corr = FALSE, cl.pos = 'r', tl.col = 'black', cl.ratio = 2, cl.offset = 5, col = col1(100))
+plot_Theta(AML_Theta, AML$mutations)
 ```
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](Demo_files/figure-gfm/plot_AML_Theta_full-1.png)<!-- -->
 
-The off-diagonal entries represent the interactions between mutations:
-
-``` r
-corrplot(temp[idx,idx], is.corr = FALSE, tl.col = 'black')
-```
-
-![](Demo_files/figure-markdown_github/unnamed-chunk-20-1.png)
+    ## TableGrob (1 x 2) "arrange": 2 grobs
+    ##   z     cells    name           grob
+    ## 1 1 (1-1,1-1) arrange gtable[layout]
+    ## 2 2 (1-1,2-2) arrange gtable[layout]
 
 If we focus on the entries with non-zero off-diagonal entries, we get:
 
 ``` r
-par(mfrow = c(1,1))
-to_show <- sapply(c(1:AML$n), function (i) any(AML_Theta[i,-i] != 0) || any(AML_Theta[-i,i] != 0))
-to_show_mat <- AML_Theta[to_show,to_show]
-dimnames(to_show_mat) <- list(AML$mutations[to_show],AML$mutations[to_show])
-to_show_idx <- order(diag(to_show_mat),decreasing = TRUE)
-diag(to_show_mat) <- 0
-corrplot(round(to_show_mat[to_show_idx,to_show_idx],2), is.corr = FALSE,
-         tl.col = "black",tl.pos = "d",tl.cex = 0.66)
+plot_Theta(AML_Theta, AML$mutations, full = FALSE)
 ```
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-21-1.png)
+![](Demo_files/figure-gfm/plot_AML_Theta-1.png)<!-- -->
 
 Given the estimated MHN, we can plot the most probable evolutionary
-trajectories of a given length using the `plot_pathways` function. Here
-we choose length 4.
+trajectories of a given length using the `plot_pathways` function:
 
 ``` r
-plot_pathways(AML_Theta, mutations = AML$mutations, n_order = 4, top_M = 10)
+plot_pathways(AML_Theta, mutations = AML$mutations, top_M = 10, n_order = 4)
 ```
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](Demo_files/figure-gfm/plot_AML_pathways-1.png)<!-- -->
 
 Given a particular tree and the estimated MHN, we can also find the next
-most probable mutational events using the `next_mutation` function.
+most probable mutational events using the `plot_next_mutations`
+function.
 
 ``` r
-next_mutation(AML$n, AML$trees[[21]], AML_Theta, mutations = AML$mutations, tree_label = "AML-38-001", top_M = 6)
+plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, mutations = AML$mutations, tree_label = "AML-38-001", top_M = 6)
 ```
 
     ## Top 6 most probable mutational events that will happen next:
-    ## The next most probable node: Root->NPM1->IDH2->FLT3->WT1 
-    ## Probability: 5.639 %
-    ## The next most probable node: Root->NPM1->IDH1->FLT3->WT1 
-    ## Probability: 5.531 %
     ## The next most probable node: Root->NPM1->IDH2->SRSF2 
-    ## Probability: 4.56 %
-    ## The next most probable node: Root->NPM1->IDH2->FLT3->SRSF2 
-    ## Probability: 4.56 %
+    ## Probability: 4.066 %
     ## The next most probable node: Root->NPM1->IDH2->KRAS->SRSF2 
-    ## Probability: 4.56 %
+    ## Probability: 4.066 %
     ## The next most probable node: Root->NPM1->IDH2->PTPN11->SRSF2 
-    ## Probability: 4.56 %
+    ## Probability: 4.066 %
+    ## The next most probable node: Root->NPM1->IDH1->FLT3->WT1 
+    ## Probability: 3.454 %
+    ## The next most probable node: Root->NPM1->IDH2->FLT3->WT1 
+    ## Probability: 3.454 %
+    ## The next most probable node: Root->NPM1->IDH2->FLT3->SRSF2 
+    ## Probability: 3.428 %
 
-![](Demo_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](Demo_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
