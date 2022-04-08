@@ -244,25 +244,3 @@ get_MC_flags <- function(N, n, trees, MC_threshold) {
 
 }
 
-
-# dp_one <- function(n, exp_Theta, lambda_s) {
-# 
-#   sum_lambdas <- sum(diag(exp_Theta))
-#   sum_all <- lambda_s + sum_lambdas
-#   dp <- matrix(0, nrow = n, ncol = n)
-# 
-#   for (i in c(1:n)) {
-#     temp_denom_i <- sum(sapply(setdiff(c(1:n),i), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,i])))
-#     dp[-i,i] <- - exp_Theta[i,i] / sum_all * lambda_s * diag(exp_Theta)[-i] / (lambda_s + temp_denom_i)^2
-# 
-#     dp[i,i] <- lambda_s / (lambda_s + temp_denom_i) * (sum_all^(-1) - exp_Theta[i,i] * sum_all^(-2))
-#     for (k in setdiff(c(1:n),i)) {
-#       temp_denom_k <- sum(sapply(setdiff(c(1:n),k), function (j) exp_Theta[j,j] * (1 + exp_Theta[j,k])))
-#       dp[i,i] <- dp[i,i] - exp_Theta[k,k] * lambda_s *
-#         (sum_all^(-2) * (lambda_s + temp_denom_k)^(-1) + sum_all^(-1) * (1 + exp_Theta[i,k]) * (lambda_s + temp_denom_k)^(-2))
-#     }
-#   }
-# 
-#   return(dp)
-# }
-

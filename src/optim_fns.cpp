@@ -19,6 +19,75 @@ arma::mat with_l1_penalty_grad(arma::mat Theta, const double &gamma,
   return Theta_grad - gamma * arma::sign(Theta);
 }
 
+double prob_empty_tree(const arma::vec &lambdas, const double &lambda_s) {
+  
+  return lambda_s / (lambda_s + sum(lambdas));
+  
+}
+
+double get_temp_denom_at_idx(const double &n, const arma::mat &exp_Theta, const double &lambda_s, int i) {
+  
+  double temp_denom_i = lambda_s;
+  for (int j {0}; j < i; ++j) {
+    temp_denom_i += exp_Theta(j, j) * (1 + exp_Theta(j, i));
+  }
+  for (int j {i+1}; j < n; ++j) {
+    temp_denom_i += exp_Theta(j, j) * (1 + exp_Theta(j, i));
+  }
+  return temp_denom_i;
+  
+}
+
+
+double prob_one_tree(const double &n, const arma::mat &exp_Theta, const double &lambda_s) {
+  
+  double p = 0;
+  double sum_all = lambda_s + sum(exp_Theta.diag(0));
+  for (int i {0}; i < n; ++i) {
+    double temp_denom = get_temp_denom_at_idx(n, exp_Theta, lambda_s, i);
+    p += exp_Theta(i, i) / sum_all * lambda_s / temp_denom;
+  }
+  return p;
+  
+}
+
+
+arma::mat dp_one(const double &n, const arma::mat &exp_Theta, const double &lambda_s) {
+  
+  double sum_lambdas = sum(exp_Theta.diag(0));
+  double sum_all = lambda_s + sum_lambdas;
+  arma::mat dp(n, n, fill::zeros);
+  
+  for (int i {0}; i < n; ++i) {
+    
+    double temp_denom_i = get_temp_denom_at_idx(n, exp_Theta, lambda_s, i);
+    
+    for (int j {0}; j < i; ++j) {
+      dp(j, i) -= exp_Theta(i, i) / sum_all * lambda_s * exp_Theta(j, j) * pow(temp_denom_i, -2);
+    }
+    for (int j {i+1}; j < n; ++j) {
+      dp(j, i) -= exp_Theta(i, i) / sum_all * lambda_s * exp_Theta(j, j) * pow(temp_denom_i, -2);
+    }
+    
+    dp(i, i) += lambda_s / temp_denom_i * (sum_all - exp_Theta(i, i)) * pow(sum_all, -2);
+    
+    for (int k {0}; k < i; ++k) {
+      double temp_denom_k = get_temp_denom_at_idx(n, exp_Theta, lambda_s, k);
+      double temp = pow(sum_all, -2) / temp_denom_k + (1 + exp_Theta(i, k)) * pow(temp_denom_k, -2) / sum_all;
+      dp(i, i) -= exp_Theta(k, k) * lambda_s * temp;
+    }
+    for (int k {i+1}; k < n; ++k) {
+      double temp_denom_k = get_temp_denom_at_idx(n, exp_Theta, lambda_s, k);
+      double temp = pow(sum_all, -2) / temp_denom_k + (1 + exp_Theta(i, k)) * pow(temp_denom_k, -2) / sum_all;
+      dp(i, i) -= exp_Theta(k, k) * lambda_s * temp;
+    }
+    
+  }
+  
+  return dp;
+  
+}
+
 
 double full_tree_log_score(const arma::mat &Theta, const IntegerVector &nodes, const List &children,
                            const NumericVector &time_diffs, IntegerVector pathway = {}, int current_pos = 0) {
@@ -168,31 +237,6 @@ arma::mat obs_tree_grad(const arma::mat &Theta, const int &n, const IntegerVecto
 }
 
 
-double prob_empty_tree(const arma::vec &lambdas, const double &lambda_s) {
-  
-  return lambda_s / (lambda_s + sum(lambdas));
-  
-}
-
-
-double prob_one_tree(const double &n, const arma::mat &exp_Theta, const double &lambda_s) {
-  
-  double p = 0;
-  double sum_lambdas = sum(exp_Theta.diag(0));
-  for (int i {0}; i < n; ++i) {
-    double temp_denom = 0;
-    for (int j {0}; j < n; ++j) {
-      if (j != i) {
-        temp_denom += exp_Theta(j, j) * (1 + exp_Theta(j, i));
-      }
-    }
-    p += exp_Theta(i, i) / (lambda_s + sum_lambdas) * lambda_s / (lambda_s + temp_denom);
-  }
-  return p;
-  
-}
-
-
 // [[Rcpp::export]]
 double full_MHN_objective(const arma::vec &Theta, const List &trees, const double &gamma,
                           const int &n, const int &N, const double &lambda_s, 
@@ -216,15 +260,17 @@ double full_MHN_objective(const arma::vec &Theta, const List &trees, const doubl
     log_score += weights.at(i) * full_tree_log_score(Theta_, tree["nodes"], tree["children"], tree["time_diffs"]);
   }
   
-  arma::mat exp_Theta = exp(Theta_);
-  arma::vec lambdas = exp_Theta.diag(0);
-  
-  if (smallest_tree_size == 1) {
-    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s));
-  }
-  
-  if (smallest_tree_size == 2) {
-    log_score -= N_patients * log(1 - prob_empty_tree(lambdas, lambda_s)) - prob_one_tree(n, exp_Theta, lambda_s);
+  if (smallest_tree_size > 0) {
+    
+    arma::mat exp_Theta = exp(Theta_);
+    arma::vec lambdas = exp_Theta.diag(0);
+    
+    if (smallest_tree_size == 1) {
+      log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s));
+    } else {
+      log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s));
+    }
+    
   }
   
   return log_score;
@@ -260,18 +306,24 @@ arma::mat full_MHN_grad(const arma::vec &Theta, const List &trees, const double 
     }
   }
   
-  arma::mat exp_Theta = exp(Theta_);
-  arma::vec lambdas = exp_Theta.diag(0);
-  double p_empty = prob_empty_tree(lambdas, lambda_s);
-  
-  if (smallest_tree_size >= 1) {
-    Theta_grad.diag(0) -= N_patients * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+  if (smallest_tree_size > 0) {
+    
+    arma::mat exp_Theta = exp(Theta_);
+    arma::vec lambdas = exp_Theta.diag(0);
+    double p_empty = prob_empty_tree(lambdas, lambda_s);
+    
+    if (smallest_tree_size == 1) {
+      Theta_grad.diag(0) -= sum(weights) * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+    } else {
+      arma::mat temp_grad(n, n, fill::zeros);
+      temp_grad.diag(0) += pow(p_empty, 2) / lambda_s;
+      temp_grad -= dp_one(n, exp_Theta, lambda_s);
+      temp_grad *= sum(weights) / (1 - p_empty - prob_one_tree(n, exp_Theta, lambda_s) + 1e-10);
+      temp_grad = temp_grad % exp_Theta;
+      Theta_grad -= temp_grad;
+    }
+    
   }
-  
-  // if (smallest_tree_size == 2) {
-  //   double p_one = prob_one_tree(n, exp_Theta, lambda_s);
-  //   Theta_grad.diag(0) -= N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
-  // }
   
   return Theta_grad;
   
@@ -305,15 +357,17 @@ double obs_MHN_objective(const arma::vec &Theta, const int &n, const int &N,
     log_prob_vec.at(i) = p;
   }
   
-  arma::mat exp_Theta = exp(Theta_);
-  arma::vec lambdas = exp_Theta.diag(0);
-  
-  if (smallest_tree_size == 1) {
-    log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s));
-  }
-  
-  if (smallest_tree_size == 2) {
-    log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s));
+  if (smallest_tree_size > 0) {
+    
+    arma::mat exp_Theta = exp(Theta_);
+    arma::vec lambdas = exp_Theta.diag(0);
+    
+    if (smallest_tree_size == 1) {
+      log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s));
+    } else {
+      log_score -= sum(weights) * log(1 - prob_empty_tree(lambdas, lambda_s) - prob_one_tree(n, exp_Theta, lambda_s));
+    }
+    
   }
   
   return log_score;
@@ -338,7 +392,7 @@ arma::mat obs_MHN_grad(const arma::vec &Theta, const int &n, const int &N,
     }
   }
   
-  arma::mat Theta_grad(n,n,fill::zeros);
+  arma::mat Theta_grad(n, n, fill::zeros);
   // Loop through all trees
   for (int i {0}; i < N; ++i) {
     
@@ -358,18 +412,24 @@ arma::mat obs_MHN_grad(const arma::vec &Theta, const int &n, const int &N,
     }
   }
   
-  arma::mat exp_Theta = exp(Theta_);
-  arma::vec lambdas = exp_Theta.diag(0);
-  double p_empty = prob_empty_tree(lambdas, lambda_s);
-  
-  if (smallest_tree_size >= 1) {
-    Theta_grad.diag(0) -= sum(weights) * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+  if (smallest_tree_size > 0) {
+    
+    arma::mat exp_Theta = exp(Theta_);
+    arma::vec lambdas = exp_Theta.diag(0);
+    double p_empty = prob_empty_tree(lambdas, lambda_s);
+    
+    if (smallest_tree_size == 1) {
+      Theta_grad.diag(0) -= sum(weights) * pow(p_empty, 2) / lambda_s / (1 - p_empty + 1e-10) * lambdas;
+    } else {
+      arma::mat temp_grad(n, n, fill::zeros);
+      temp_grad.diag(0) += pow(p_empty, 2) / lambda_s;
+      temp_grad -= dp_one(n, exp_Theta, lambda_s);
+      temp_grad *= sum(weights) / (1 - p_empty - prob_one_tree(n, exp_Theta, lambda_s) + 1e-10);
+      temp_grad = temp_grad % exp_Theta;
+      Theta_grad -= temp_grad;
+    }
+    
   }
-  
-  // if (smallest_tree_size == 2) {
-  //   double p_one = prob_one_tree(n, exp_Theta, lambda_s);
-  //   Theta_grad.diag(0) -= N_patients * (diag(p_empty^2 / lambda_s * lambdas) - dp_one(n, exp_Theta, lambda_s)) / (1 - p_empty - p_one + 1e-10)
-  // }
   
   return Theta_grad;
 }
