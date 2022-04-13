@@ -25,6 +25,7 @@ random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
   return(round(Theta, 2))
 }
 
+
 ##' @name generate_trees
 ##' @title Generate a set of trees based on a Mutual Hazard Network
 ##' @description This function generate a set of trees based on an MHN, which is either
@@ -36,7 +37,10 @@ random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
 ##' @param sparsity Percentage of off diagonal elements with a value of zero in the MHN (Default: 0.5).
 ##' @param exclusive_ratio Percentage of non-zero elements that are negative,
 ##' meaning that one mutation is inhibiting another mutation (Default: 0.9).
-##' @param non_empty A flag for the function to generate non-empty trees only (Default: TRUE).
+##' @param smallest_tree_size The smallest size of the tree (Default: 1). 
+##' The tree only containing the root node has a size of zero.
+##' @param largest_tree_size The largest size of the tree. By default, the tree size
+##' is no bigger than the number of mutations n (or half if n > 10).
 ##' @param mutations A list of mutation names, which must be unique values (Default: NULL).
 ##' @param perturb A flag for the function to perturb the generated tree structures (Default: FALSE).
 ##' @param epsilon Noise level for perturbing the trees (Default: 0.05).
@@ -44,15 +48,16 @@ random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
 ##' @author Xiang Ge Luo
 ##' @export
 generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
-                           sparsity = 0.5, exclusive_ratio = 0.5, non_empty = TRUE,
+                           sparsity = 0.5, exclusive_ratio = 0.5, 
+                           smallest_tree_size = 1, largest_tree_size = NULL,
                            mutations = NULL, perturb = FALSE, epsilon = 0.05) {
-
+  
   if (is.null(Theta)) {
     Theta <- random_Theta(n, sparsity, exclusive_ratio)
   } else if (nrow(Theta) != n) {
     stop("The dimension of the provided MHN is different from n. Please check again...")
   }
-
+  
   if (is.null(mutations)) {
     mutations <- as.character(seq(1,n))
   } else {
@@ -62,169 +67,146 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
       stop("Mutation names must be unique. Please check again...")
     }
   }
-
-  trees <- list()
-  all_mutation_check <- FALSE
-
-  if (non_empty) { # empty trees are not allowed
-    while ((length(trees) < N) || !all_mutation_check) {
-      tree <- generate_tree_MHN(n, Theta, lambda_s)
-      if (length(tree) != 0) {
-        # check if the tree is empty
-        if (sum(tree$in_tree) <= 1) {
-          next
-        }
-        if (length(trees) >= N) {
-          trees[[sample(seq(1,N),1)]] <- NULL
-        }
-        trees <- append(trees, list(tree))
-        all_mutation_check <- check_mutations(n, trees)
-      }
-    }
-  } else { # empty trees are allowed
-    while ((length(trees) < N) || !all_mutation_check) {
-      tree <- generate_tree_MHN(n, Theta, lambda_s)
-      if (length(tree) != 0) {
-        if (length(trees) >= N) {
-          trees[[sample(seq(1,N),1)]] <- NULL
-        }
-        trees <- append(trees, list(tree))
-        all_mutation_check <- check_mutations(n, trees)
-      }
+  
+  if (is.null(largest_tree_size)) {
+    if (n <= 10) {
+      largest_tree_size <- n
+    } else {
+      largest_tree_size <- floor(n / 2)
     }
   }
-
-  # Add tree IDs
-  for (i in c(1:N)) {
-    trees[[i]]$tree_ID <- i
-    trees[[i]]$patient_ID <- i ## New
+  
+  tree_dfs <- list()
+  tree_id <- 1
+  while (length(tree_dfs) < N) {
+    tree_df <- generate_tree_MHN(n, Theta, lambda_s)
+    tree_size <- nrow(tree_df) - 1
+    if ((tree_size >= smallest_tree_size) & (tree_size <= largest_tree_size)) {
+      tree_df$Patient_ID <- rep(tree_id, nrow(tree_df))
+      tree_df$Tree_ID <- rep(tree_id, nrow(tree_df))
+      tree_dfs <- append(tree_dfs, list(tree_df))
+      tree_id <- tree_id + 1
+    }
   }
-
-  tree_obj <- list("trees" = trees)
-  tree_obj <- output_tree_df(tree_obj)
-  tree_obj <- input_tree_df(n = n, tree_df = tree_obj$tree_df, 
+  tree_df <- do.call(rbind, tree_dfs) %>% 
+    select(Patient_ID, Tree_ID, Node_ID, Mutation_ID, Parent_ID)
+  
+  if (perturb) {
+    tree_df <- perturb_trees(n, tree_df, epsilon)
+  }
+  
+  tree_obj <- input_tree_df(n = n,
+                            tree_df = tree_df,
                             patients = as.character(c(1:N)), 
                             tree_labels = as.character(c(1:N)),
                             mutations = mutations)
+  
   tree_obj$Theta <- Theta
-
-  # Perturb tree
-  if (perturb) {
-    res_perturb <- perturb_trees(n, tree_obj$tree_df, epsilon)
-    tree_obj$tree_df <- res_perturb$tree_df
-    tree_obj$trees <- res_perturb$trees
-    tree_obj$epsilon <- epsilon
-  }
-
+  tree_obj$epsilon <- epsilon
+  tree_obj$perturb <- perturb
+  tree_obj$lambda_s <- lambda_s
+  
   return(tree_obj)
-
+  
 }
 
+
+##' @import dplyr
 generate_tree_MHN <- function(n, Theta, lambda_s) {
-
-  t_s <- rexp(1, lambda_s) # sampling time
-  current_pos <- c(1) # current positions being visited
-  nodes <- c(0) # nodes in the tree T or A(T)
-  path_times <- c(0) # waiting times for the pathways
-  time_diffs <- c(0) # waiting time differences
-  parents <- c(1) # list of positions for the parents
-  children <- list(c()) # list of children
-  in_tree <- c(TRUE) # whether the node is in T [TRUE] or A(T) [FALSE]
-  genotypes <- rep(0,n)
-
-  repeat{
-
-    node_count <- length(current_pos)
-    if (node_count == 0) {
-      break
-    }
-
-    # Check if the tree is too large. Trees with size greater than the number of
-    # mutational events (or half if n > 10) are typically not observed in practice.
-    if ((n <= 10) && (sum(in_tree) > (n+1))) {
-      return(list())
-    } else if ((n > 10) && (sum(in_tree) > (n/2 + 1))) {
-      return(list())
-    }
-
-    temp_pos <- c()
-    for (i in c(1:node_count)) {
-
-      path <- get_pathway(nodes, current_pos[i], parents)
-      path <- setdiff(path, 0)
-
-      for (j in setdiff(c(1:n), path)) {
-        nodes <- c(nodes, j)
-        parents <- c(parents, current_pos[i])
-        children <- append(children, list(c()))
-        children[[current_pos[i]]] <- c(children[[current_pos[i]]], length(nodes))
-
-        if (length(path) == 0) {
-          lambda_j <- exp(Theta[j,j])
+  
+  # sampling time
+  t_s <- rexp(1, lambda_s) 
+  
+  # initialize dataframe to store the tree
+  tree_df <- data.frame(matrix(nrow = 0, ncol = 4))
+  colnames(tree_df) <- c("Node_ID","Mutation_ID","Parent_ID", "Occurrence_Time")
+  tree_df <- tree_df %>% bind_rows(c(Node_ID = 1, 
+                                     Mutation_ID = 0, 
+                                     Parent_ID = 1, 
+                                     Occurrence_Time = 0))
+  
+  # current positions being visited
+  current_nodes <- c(1)
+  
+  # recursively expand the tree
+  while (length(current_nodes) > 0) {
+    
+    # initialize next positions
+    next_nodes <- c()
+    
+    # loop through all existing nodes
+    for (i in c(1:length(current_nodes))) {
+      
+      node_i <- current_nodes[i]
+      idx_i <- match(node_i, tree_df$Node_ID)
+      pathway_i <- get_pathway(tree_df, idx_i)
+      t_i <- tree_df$Occurrence_Time[idx_i]
+      
+      # loop through all next nodes
+      for (j in setdiff(c(1:n), pathway_i)) {
+        
+        # get rate
+        if (length(pathway_i) == 0) {
+          lambda_j <- exp(Theta[j, j])
         } else {
-          lambda_j <- exp(Theta[j,j] + sum(sapply(path, function(k) Theta[j,k])))
+          lambda_j <- exp(Theta[j, j] + sum(sapply(pathway_i, function (k) Theta[j, k])))
         }
-        time_j_diff <- rexp(1, lambda_j)
-        time_diffs <- c(time_diffs, time_j_diff)
-        time_j <- time_j_diff + path_times[current_pos[i]]
-        path_times <- c(path_times, time_j)
-
-
-        if (time_j < t_s) {
-          in_tree <- c(in_tree, TRUE)
-          temp_pos <- c(temp_pos, length(nodes))
-          temp_genotype <- rep(0,n)
-          temp_genotype[c(path,j)] <- 1
-          genotypes <- rbind(genotypes,temp_genotype)
-        } else {
-          in_tree <- c(in_tree, FALSE)
+        
+        # draw new waiting time
+        t_j <- t_i + rexp(1, lambda_j)
+        if (t_j < t_s) {
+          # expand the tree by one node
+          node_j <- nrow(tree_df) + 1
+          tree_df <- tree_df %>% bind_rows(c(Node_ID = node_j, 
+                                             Mutation_ID = j, 
+                                             Parent_ID = node_i, 
+                                             Occurrence_Time = t_j))
+          # add this node to next positions
+          next_nodes <- c(next_nodes, node_j)
         }
       }
     }
-
-    current_pos <- temp_pos
+    
+    current_nodes <- next_nodes
+    
   }
-
-  tree <- list("nodes" = nodes,
-               "parents" = parents,
-               "children" = children,
-               "in_tree" = in_tree,
-               "genotypes" = genotypes)
-  return(tree)
-
+  
+  tree_df <- tree_df %>% select(Node_ID, Mutation_ID, Parent_ID)
+  
+  return(tree_df)
+  
 }
 
-get_pathway <- function(nodes, pos, parents) {
 
-  path <- c(nodes[pos])
+get_pathway <- function(tree_df, idx_i) {
+  
+  pathway <- c()
   repeat {
-    pa <- nodes[parents[pos]]
-    if (pa == 0) {
+    mut <- tree_df$Mutation_ID[idx_i]
+    if (mut == 0) {
       break
     }
-    path <- c(pa, path)
-    pos <- parents[pos]
+    pathway <- c(mut, pathway)
+    idx_i <- match(tree_df$Parent_ID[idx_i], tree_df$Node_ID)
   }
-  return(path)
-
+  return(pathway)
+  
 }
-
 
 perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 
   unique_tree_IDs <- unique(tree_df$Tree_ID)
-  new_tree_df <- data.frame(matrix(ncol = 4, nrow = 0))
-  colnames(new_tree_df) <- c("Tree_ID","Node_ID","Mutation_ID","Parent_ID")
+  new_tree_df <- data.frame(matrix(ncol = 5, nrow = 0))
+  colnames(new_tree_df) <- c("Patient_ID", "Tree_ID","Node_ID","Mutation_ID","Parent_ID")
 
   for (i in c(1:length(unique_tree_IDs))) {
 
-    one_tree_df <- sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
+    one_tree_df <- TreeMHN:::sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
     new_tree_df <- rbind(new_tree_df, perturb_tree(n, one_tree_df, epsilon))
 
   }
-
-  res <- tree_df_to_trees(n, new_tree_df)
-  return(res)
+  
+  return(new_tree_df)
 
 }
 

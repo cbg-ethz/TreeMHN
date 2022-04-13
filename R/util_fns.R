@@ -101,22 +101,12 @@ build_poset <- function(tree) {
     }
     dimnames(poset) <- list(c(nodes_in_tree),c(nodes_in_tree))
     if (nr_nodes > 1) {
-      return(ggm::topSort(poset))
+      return(topSort(poset))
     } else {
       return(poset)
     }
   }
 }
 
-check_mutations <- function(n, trees) {
-  all_muts <- c(1:n)
-  for (tree in trees) {
-    all_muts <- setdiff(all_muts, tree$nodes[tree$in_tree])
-    if (length(all_muts) == 0) {
-      return(TRUE)
-    }
-  }
-  return(FALSE)
-}
 
 

@@ -11,7 +11,8 @@ generate_trees(
   Theta = NULL,
   sparsity = 0.5,
   exclusive_ratio = 0.5,
-  non_empty = TRUE,
+  smallest_tree_size = 1,
+  largest_tree_size = NULL,
   mutations = NULL,
   perturb = FALSE,
   epsilon = 0.05
@@ -31,7 +32,11 @@ generate_trees(
 \item{exclusive_ratio}{Percentage of non-zero elements that are negative,
 meaning that one mutation is inhibiting another mutation (Default: 0.9).}
 
-\item{non_empty}{A flag for the function to generate non-empty trees only (Default: TRUE).}
+\item{smallest_tree_size}{The smallest size of the tree (Default: 1). 
+The tree only containing the root node has a size of zero.}
+
+\item{largest_tree_size}{The largest size of the tree. By default, the tree size
+is no bigger than the number of mutations n (or half if n > 10).}
 
 \item{mutations}{A list of mutation names, which must be unique values (Default: NULL).}
 
