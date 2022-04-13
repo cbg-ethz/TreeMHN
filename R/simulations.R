@@ -139,7 +139,7 @@ generate_tree_MHN <- function(n, Theta, lambda_s) {
       
       node_i <- current_nodes[i]
       idx_i <- match(node_i, tree_df$Node_ID)
-      pathway_i <- get_pathway(tree_df, idx_i)
+      pathway_i <- get_pathway_tree_df(tree_df, idx_i)
       t_i <- tree_df$Occurrence_Time[idx_i]
       
       # loop through all next nodes
@@ -177,21 +177,6 @@ generate_tree_MHN <- function(n, Theta, lambda_s) {
   
 }
 
-
-get_pathway <- function(tree_df, idx_i) {
-  
-  pathway <- c()
-  repeat {
-    mut <- tree_df$Mutation_ID[idx_i]
-    if (mut == 0) {
-      break
-    }
-    pathway <- c(mut, pathway)
-    idx_i <- match(tree_df$Parent_ID[idx_i], tree_df$Node_ID)
-  }
-  return(pathway)
-  
-}
 
 perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 

@@ -109,4 +109,32 @@ build_poset <- function(tree) {
 }
 
 
+get_pathway_tree_df <- function(tree_df, idx_i) {
+  
+  pathway <- c()
+  repeat {
+    mut <- tree_df$Mutation_ID[idx_i]
+    if (mut == 0) {
+      break
+    }
+    pathway <- c(mut, pathway)
+    idx_i <- match(tree_df$Parent_ID[idx_i], tree_df$Node_ID)
+  }
+  return(pathway)
+  
+}
 
+get_pathway_tree_list <- function(nodes, pos, parents) {
+
+  path <- c(nodes[pos])
+  repeat {
+    pa <- nodes[parents[pos]]
+    if (pa == 0) {
+      break
+    }
+    path <- c(pa, path)
+    pos <- parents[pos]
+  }
+  return(path)
+
+}

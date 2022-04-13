@@ -138,7 +138,7 @@ plot_next_mutations <- function(n, tree, Theta, mutations = NULL, tree_label = N
   for (i in c(1:length(next_mutations))) {
 
     pos <- next_mutations[i]
-    node <- get_pathway(tree$nodes,pos,tree$parents)
+    node <- get_pathway_tree_list(tree$nodes,pos,tree$parents)
     next_lambdas[i] <- get_lambda(node, Theta)
 
   }
@@ -152,7 +152,7 @@ plot_next_mutations <- function(n, tree, Theta, mutations = NULL, tree_label = N
 
     idx <- top_M_idx[i]
     most_likely_pos <- next_mutations[idx]
-    node <- get_pathway(tree$nodes,most_likely_pos,tree$parents)
+    node <- get_pathway_tree_list(tree$nodes,most_likely_pos,tree$parents)
     node <- mutations[node]
     cat("The next most probable node:", paste(c("Root",node),collapse = "->"), "\n")
     cat("Probability:", round(probs[idx]*100,3), "%\n")
