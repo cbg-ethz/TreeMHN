@@ -1,7 +1,7 @@
 ---
 title: "TreeMHN - Demo"
 author: "Xiang Ge Luo"
-date: "2022/03/26"
+date: "2022/04/13"
 output: 
   md_document:
     variant: gfm
@@ -25,11 +25,11 @@ library(ggplot2)
 The function `generate_trees` can generate a random Mutual Hazard Network $\Theta$ and a set of mutation trees from $\Theta$ according to the tree generating process introduced in the paper.
 
 ```{r generate_trees, cache=TRUE}
-set.seed(777)
+set.seed(6666)
 n <- 10 # number of events
 N <- 500 # number of samples
 lambda_s <- 1 # sampling event rate
-gamma <- 0.1 # penalty parameter
+gamma <- 0.5 # penalty parameter
 sparsity <- 0.5 # sparsity of the MHN
 exclusive_ratio <- 0.5 # proportion of inhibiting edges
 
@@ -42,7 +42,7 @@ trees <- tree_obj$trees # extract trees
 
 We can plot one of the trees using the `plot_tree` function:
 ```{r display_one_tree}
-tree <- trees[[77]]
+tree <- trees[[66]]
 plot_tree(tree, tree_obj$mutations)
 ```
 
@@ -74,7 +74,7 @@ subsample_once <- function(subsample_size, tree_obj, gamma) {
 # Function to get a vector of non-selected (masked) elements 
 get_mask <- function(n, SS_res, thr = 0.95) {
   to_mask <- sapply(SS_res, function (x) as.vector(x))
-  to_mask[abs(to_mask) > 1e-3] <- 1
+  to_mask[abs(to_mask) > 1e-2] <- 1
   to_mask[to_mask != 1] <- 0
   to_mask <- which(matrix(apply(to_mask,1,mean) > thr,nrow = n) == 0)
   return(to_mask)
@@ -84,15 +84,17 @@ get_mask <- function(n, SS_res, thr = 0.95) {
 It is recommended to run the stability selection procedure using the `parallel` package.
 
 ```{r TreeMHN_SS, cache=TRUE}
-SS_res <- mclapply(c(1:100), function(i) subsample_once(subsample_size, tree_obj, 2), mc.cores = detectCores())
-TreeMHN_to_mask <- get_mask(n, SS_res)
+SS_res <- mclapply(c(1:1000), 
+                   function(i) subsample_once(subsample_size, tree_obj, gamma), 
+                   mc.cores = detectCores())
+TreeMHN_to_mask <- get_mask(n, SS_res, 0.99)
 pred_Theta_w_SS <- learn_MHN(tree_obj, gamma = gamma, to_mask = TreeMHN_to_mask)
 ```
 
 
 ## 2.3 Performance assessment
 
-We first plot the true MHN and the two estimated MHNs by ordering the entries based on the true baseline rates. At a regularization level $\gamma = 0.1$, most entries at the top left corner are recovered. Without stability selection, there are many false non-zero entries due to overfitting, including some very small values at the top left corner. With stability selection, we see that those entries are removed, along with some true positive entries at the lower left corner.
+We first plot the true MHN and the two estimated MHNs by ordering the entries based on the true baseline rates. At a regularization level $\gamma = 0.5$, most entries at the top left corner are recovered. Without stability selection, there are many false non-zero entries due to overfitting, including some very small values at the top left corner. With stability selection, we see that those entries are removed, along with some true positive entries at the lower left corner.
 
 ```{r get_idx}
 idx <- order(diag(true_Theta),decreasing = TRUE)
@@ -158,9 +160,11 @@ plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]],
           tree_label = "AML-38-001") 
 ```
 
-To use another dataset, please make sure it is in dataframe format with four columns:
+To use another dataset, please make sure it is in dataframe format with five columns:
 
-- `Tree_ID`: IDs of mutation trees, unique for each patient;
+- `Patient_ID`: IDs of patients, unique for each patient;
+
+- `Tree_ID`: IDs of mutation trees, unique within each patient;
 
 - `Node_ID`: IDs of each node in the tree, including the root node (with ID "1"), unique for each node;
 
@@ -176,25 +180,28 @@ head(AML$tree_df)
 
 To convert a dataframe to an `TreeMHN` object, use the `input_tree_df` function. For example,
 
-```{r input_example, eval=FALSE}
+```{r input_example}
 # not run
-input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
+# input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
 ```
 
 
 ## 3.2 Learn the MHN
 
-To ensure enough precision, we run stability selection with $\gamma = 0.1$ and a threshold of $99\%$ and obtain a vector of non-selected elements over $1000$ subsamples. Again, we recommend to run the code using the `parallel` package on a cluster.
+To ensure enough precision, we run stability selection with $\gamma = 0.1$ and a threshold of $95\%$ and obtain a vector of non-selected elements over $1000$ subsamples. Again, we recommend to run the code using the `parallel` package on a cluster.
 
 ```{r AML_SS, cache=TRUE}
 RNGkind("L'Ecuyer-CMRG")
-gamma <- 0.05
+gamma <- 0.1
 subsample_size <- floor(AML$N / 2)
-SS_res <- mclapply(c(1:1000), function(i) subsample_once(subsample_size, AML, gamma), mc.cores = detectCores(), mc.set.seed = TRUE)
-to_mask <- get_mask(AML$n, SS_res, 0.99)
+SS_res <- mclapply(c(1:1000), 
+                   function(i) subsample_once(subsample_size, AML, gamma), 
+                   mc.cores = detectCores(), 
+                   mc.set.seed = TRUE)
+to_mask <- get_mask(AML$n, SS_res, 0.95)
 ```
 
-Then we refit the model with $\gamma = 0$ by masking the non-selected elements.
+Then we refit the model by masking the non-selected elements.
 
 ```{r AML_with_mask, cache=TRUE}
 AML_Theta <- learn_MHN(AML, gamma = gamma, to_mask = to_mask)
@@ -226,7 +233,9 @@ plot_pathways(AML_Theta, mutations = AML$mutations, top_M = 10, n_order = 4)
 
 Given a particular tree and the estimated MHN, we can also find the next most probable mutational events using the `plot_next_mutations` function.
 
-```{r}
-plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, mutations = AML$mutations, tree_label = "AML-38-001", top_M = 6)
+```{r next_mutations}
+plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, 
+                    mutations = AML$mutations, tree_label = "AML-38-001", 
+                    top_M = 20)
 ```
 

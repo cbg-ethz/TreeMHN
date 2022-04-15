@@ -20,11 +20,11 @@ Network *Θ* and a set of mutation trees from *Θ* according to the tree
 generating process introduced in the paper.
 
 ``` r
-set.seed(777)
+set.seed(6666)
 n <- 10 # number of events
 N <- 500 # number of samples
 lambda_s <- 1 # sampling event rate
-gamma <- 0.1 # penalty parameter
+gamma <- 0.5 # penalty parameter
 sparsity <- 0.5 # sparsity of the MHN
 exclusive_ratio <- 0.5 # proportion of inhibiting edges
 
@@ -38,7 +38,7 @@ trees <- tree_obj$trees # extract trees
 We can plot one of the trees using the `plot_tree` function:
 
 ``` r
-tree <- trees[[77]]
+tree <- trees[[66]]
 plot_tree(tree, tree_obj$mutations)
 ```
 
@@ -57,13 +57,12 @@ pred_Theta <- learn_MHN(tree_obj, gamma = gamma, lambda_s = lambda_s, verbose = 
     ## Initializing Theta...
     ## Checking whether MCEM is needed...
     ## Running MLE...
-    ## iter   10 value 3202.165826
-    ## iter   20 value 3169.624652
-    ## iter   30 value 3164.886140
-    ## iter   40 value 3163.296204
-    ## iter   50 value 3162.429880
-    ## iter   60 value 3162.120673
-    ## final  value 3162.032487 
+    ## iter   10 value 3534.182513
+    ## iter   20 value 3520.105848
+    ## iter   30 value 3515.849267
+    ## iter   40 value 3514.837437
+    ## iter   50 value 3514.370185
+    ## final  value 3514.281048 
     ## converged
 
 -   With stability selection ([Meinshausen and
@@ -85,7 +84,7 @@ subsample_once <- function(subsample_size, tree_obj, gamma) {
 # Function to get a vector of non-selected (masked) elements 
 get_mask <- function(n, SS_res, thr = 0.95) {
   to_mask <- sapply(SS_res, function (x) as.vector(x))
-  to_mask[abs(to_mask) > 1e-3] <- 1
+  to_mask[abs(to_mask) > 1e-2] <- 1
   to_mask[to_mask != 1] <- 0
   to_mask <- which(matrix(apply(to_mask,1,mean) > thr,nrow = n) == 0)
   return(to_mask)
@@ -96,8 +95,10 @@ It is recommended to run the stability selection procedure using the
 `parallel` package.
 
 ``` r
-SS_res <- mclapply(c(1:100), function(i) subsample_once(subsample_size, tree_obj, 2), mc.cores = detectCores())
-TreeMHN_to_mask <- get_mask(n, SS_res)
+SS_res <- mclapply(c(1:1000), 
+                   function(i) subsample_once(subsample_size, tree_obj, gamma), 
+                   mc.cores = detectCores())
+TreeMHN_to_mask <- get_mask(n, SS_res, 0.99)
 pred_Theta_w_SS <- learn_MHN(tree_obj, gamma = gamma, to_mask = TreeMHN_to_mask)
 ```
 
@@ -105,7 +106,7 @@ pred_Theta_w_SS <- learn_MHN(tree_obj, gamma = gamma, to_mask = TreeMHN_to_mask)
 
 We first plot the true MHN and the two estimated MHNs by ordering the
 entries based on the true baseline rates. At a regularization level
-*γ* = 0.1, most entries at the top left corner are recovered. Without
+*γ* = 0.5, most entries at the top left corner are recovered. Without
 stability selection, there are many false non-zero entries due to
 overfitting, including some very small values at the top left corner.
 With stability selection, we see that those entries are removed, along
@@ -135,9 +136,9 @@ compare_Theta(true_Theta, pred_Theta)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     50.00     38.00     47.00      2.00      3.00      0.45      0.84      1.04 
+    ##     34.00     33.00     23.00     23.00     11.00      0.59      0.73      0.51 
     ##     FPR_P       MSE 
-    ##      1.04      0.86
+    ##      0.51      0.77
 
 -   With stability selection:
 
@@ -146,9 +147,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     30.00     15.00      0.00     45.00     30.00      1.00      0.33      0.00 
+    ##     30.00     16.00      1.00     44.00     29.00      0.94      0.36      0.02 
     ##     FPR_P       MSE 
-    ##      0.00      0.70
+    ##      0.02      0.89
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -160,9 +161,9 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta[top_idx,top_idx])
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##      9.00     11.00      9.00      0.00      0.00      0.55      1.00      1.00 
+    ##      7.00     10.00      7.00      3.00      0.00      0.59      1.00      0.70 
     ##     FPR_P       MSE 
-    ##      0.82      0.13
+    ##      0.70      0.11
 
 -   With stability selection:
 
@@ -171,9 +172,9 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta_w_SS[top_idx,top_idx])
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##      0.00     11.00      0.00      9.00      0.00      1.00      1.00      0.00 
+    ##      1.00      9.00      0.00     10.00      1.00      1.00      0.90      0.00 
     ##     FPR_P       MSE 
-    ##      0.00      0.16
+    ##      0.00      0.12
 
 # 3 Real data
 
@@ -193,9 +194,11 @@ plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]],
 ![](Demo_files/figure-gfm/read_AML-1.png)<!-- -->
 
 To use another dataset, please make sure it is in dataframe format with
-four columns:
+five columns:
 
--   `Tree_ID`: IDs of mutation trees, unique for each patient;
+-   `Patient_ID`: IDs of patients, unique for each patient;
+
+-   `Tree_ID`: IDs of mutation trees, unique within each patient;
 
 -   `Node_ID`: IDs of each node in the tree, including the root node
     (with ID “1”), unique for each node;
@@ -213,39 +216,41 @@ For example,
 head(AML$tree_df)
 ```
 
-    ##    Patient_ID Tree_ID Node_ID Mutation_ID Parent_ID
-    ## 11          1       1       1           0         1
-    ## 21          1       1       2           4         1
-    ## 6           1       1       3           2         2
-    ## 31          1       1       4           1         3
-    ## 41          1       1       5           1         3
-    ## 51          1       1       6           5         3
+    ##   Patient_ID Tree_ID Node_ID Mutation_ID Parent_ID
+    ## 1          1       1       1           0         1
+    ## 2          1       1       2           4         1
+    ## 3          1       1       3           2         2
+    ## 4          1       1       4           1         3
+    ## 5          1       1       5           5         3
+    ## 6          1       1       6           6         3
 
 To convert a dataframe to an `TreeMHN` object, use the `input_tree_df`
 function. For example,
 
 ``` r
 # not run
-input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
+# input_tree_df(n = AML$n, tree_df = AML$tree_df, mutations = AML$mutations, tree_labels = AML$tree_labels)
 ```
 
 ## 3.2 Learn the MHN
 
 To ensure enough precision, we run stability selection with *γ* = 0.1
-and a threshold of 99% and obtain a vector of non-selected elements over
+and a threshold of 95% and obtain a vector of non-selected elements over
 1000 subsamples. Again, we recommend to run the code using the
 `parallel` package on a cluster.
 
 ``` r
 RNGkind("L'Ecuyer-CMRG")
-gamma <- 0.05
+gamma <- 0.1
 subsample_size <- floor(AML$N / 2)
-SS_res <- mclapply(c(1:1000), function(i) subsample_once(subsample_size, AML, gamma), mc.cores = detectCores(), mc.set.seed = TRUE)
-to_mask <- get_mask(AML$n, SS_res, 0.99)
+SS_res <- mclapply(c(1:1000), 
+                   function(i) subsample_once(subsample_size, AML, gamma), 
+                   mc.cores = detectCores(), 
+                   mc.set.seed = TRUE)
+to_mask <- get_mask(AML$n, SS_res, 0.95)
 ```
 
-Then we refit the model with *γ* = 0 by masking the non-selected
-elements.
+Then we refit the model by masking the non-selected elements.
 
 ``` r
 AML_Theta <- learn_MHN(AML, gamma = gamma, to_mask = to_mask)
@@ -294,21 +299,51 @@ most probable mutational events using the `plot_next_mutations`
 function.
 
 ``` r
-plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, mutations = AML$mutations, tree_label = "AML-38-001", top_M = 6)
+plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, 
+                    mutations = AML$mutations, tree_label = "AML-38-001", 
+                    top_M = 20)
 ```
 
-    ## Top 6 most probable mutational events that will happen next:
-    ## The next most probable node: Root->NPM1->IDH2->SRSF2 
-    ## Probability: 4.066 %
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->SRSF2 
-    ## Probability: 4.066 %
-    ## The next most probable node: Root->NPM1->IDH2->PTPN11->SRSF2 
-    ## Probability: 4.066 %
-    ## The next most probable node: Root->NPM1->IDH1->FLT3->WT1 
-    ## Probability: 3.454 %
-    ## The next most probable node: Root->NPM1->IDH2->FLT3->WT1 
-    ## Probability: 3.454 %
+    ## Top 20 most probable mutational events that will happen next:
+    ## The next most probable node: Root->NPM1->IDH2->KRAS->NRAS 
+    ## Probability: 5.424 %
     ## The next most probable node: Root->NPM1->IDH2->FLT3->SRSF2 
-    ## Probability: 3.428 %
+    ## Probability: 4.404 %
+    ## The next most probable node: Root->NPM1->IDH2->SRSF2 
+    ## Probability: 4.394 %
+    ## The next most probable node: Root->NPM1->IDH2->KRAS->SRSF2 
+    ## Probability: 4.394 %
+    ## The next most probable node: Root->NPM1->IDH2->PTPN11->SRSF2 
+    ## Probability: 4.394 %
+    ## The next most probable node: Root->NPM1->PTPN11 
+    ## Probability: 3.412 %
+    ## The next most probable node: Root->NPM1->IDH1->KRAS->PTPN11 
+    ## Probability: 3.412 %
+    ## The next most probable node: Root->NPM1->IDH2->KRAS->PTPN11 
+    ## Probability: 3.412 %
+    ## The next most probable node: Root->NPM1->IDH2->NRAS->PTPN11 
+    ## Probability: 3.412 %
+    ## The next most probable node: Root->NPM1->FLT3 
+    ## Probability: 3.032 %
+    ## The next most probable node: Root->NPM1->IDH1->KRAS->FLT3 
+    ## Probability: 3.032 %
+    ## The next most probable node: Root->NPM1->IDH1->PTPN11->FLT3 
+    ## Probability: 3.032 %
+    ## The next most probable node: Root->NPM1->IDH2->KRAS->FLT3 
+    ## Probability: 3.032 %
+    ## The next most probable node: Root->NPM1->IDH2->NRAS->FLT3 
+    ## Probability: 3.032 %
+    ## The next most probable node: Root->NPM1->IDH2->PTPN11->FLT3 
+    ## Probability: 3.032 %
+    ## The next most probable node: Root->NPM1->IDH2->NRAS 
+    ## Probability: 2.865 %
+    ## The next most probable node: Root->NPM1->NRAS 
+    ## Probability: 2.865 %
+    ## The next most probable node: Root->NPM1->IDH2->PTPN11->NRAS 
+    ## Probability: 2.865 %
+    ## The next most probable node: Root->NPM1->IDH1->FLT3->WT1 
+    ## Probability: 2.368 %
+    ## The next most probable node: Root->NPM1->IDH2->FLT3->WT1 
+    ## Probability: 2.368 %
 
-![](Demo_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![](Demo_files/figure-gfm/next_mutations-1.png)<!-- -->
