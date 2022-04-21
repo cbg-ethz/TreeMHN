@@ -147,9 +147,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     30.00     16.00      1.00     44.00     29.00      0.94      0.36      0.02 
+    ##     29.00     16.00      0.00     45.00     29.00      1.00      0.36      0.00 
     ##     FPR_P       MSE 
-    ##      0.02      0.89
+    ##      0.00      0.89
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -186,7 +186,8 @@ al. (2020)](https://www.nature.com/articles/s41467-020-19119-8).
 ``` r
 # note that we summarize the mutations at the gene level
 load("AML_tree_obj.RData")
-plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]], 
+AML_38_idx <- which(AML$patients == "AML-38_AML-38-001")
+plot_tree(AML$trees[[AML_38_idx]], 
           mutations = AML$mutations, 
           tree_label = "AML-38-001") 
 ```
@@ -234,14 +235,14 @@ function. For example,
 
 ## 3.2 Learn the MHN
 
-To ensure enough precision, we run stability selection with *γ* = 0.1
+To ensure enough precision, we run stability selection with *γ* = 0.07
 and a threshold of 95% and obtain a vector of non-selected elements over
 1000 subsamples. Again, we recommend to run the code using the
 `parallel` package on a cluster.
 
 ``` r
 RNGkind("L'Ecuyer-CMRG")
-gamma <- 0.1
+gamma <- 0.07
 subsample_size <- floor(AML$N / 2)
 SS_res <- mclapply(c(1:1000), 
                    function(i) subsample_once(subsample_size, AML, gamma), 
@@ -299,51 +300,40 @@ most probable mutational events using the `plot_next_mutations`
 function.
 
 ``` r
-plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, 
-                    mutations = AML$mutations, tree_label = "AML-38-001", 
-                    top_M = 20)
+plot_next_mutations(AML$n, AML$trees[[AML_38_idx]], AML_Theta, 
+                    mutations = AML$mutations, tree_label = "AML-38-001", top_M = 15)
 ```
 
-    ## Top 20 most probable mutational events that will happen next:
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->NRAS 
-    ## Probability: 5.424 %
-    ## The next most probable node: Root->NPM1->IDH2->FLT3->SRSF2 
-    ## Probability: 4.404 %
-    ## The next most probable node: Root->NPM1->IDH2->SRSF2 
-    ## Probability: 4.394 %
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->SRSF2 
-    ## Probability: 4.394 %
-    ## The next most probable node: Root->NPM1->IDH2->PTPN11->SRSF2 
-    ## Probability: 4.394 %
+    ## Top 15 most probable mutational events that will happen next:
     ## The next most probable node: Root->NPM1->PTPN11 
-    ## Probability: 3.412 %
+    ## Probability: 6.962 %
     ## The next most probable node: Root->NPM1->IDH1->KRAS->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->IDH2->NRAS->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH1->KRAS->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH1->PTPN11->FLT3 
-    ## Probability: 3.032 %
+    ## Probability: 6.962 %
+    ## The next most probable node: Root->NPM1->IDH2->KRAS->NRAS 
+    ## Probability: 5.22 %
+    ## The next most probable node: Root->NPM1->IDH2->FLT3->SRSF2 
+    ## Probability: 4.53 %
+    ## The next most probable node: Root->NPM1->IDH2->SRSF2 
+    ## Probability: 4.519 %
+    ## The next most probable node: Root->NPM1->IDH2->KRAS->SRSF2 
+    ## Probability: 4.519 %
+    ## The next most probable node: Root->NPM1->IDH2->PTPN11->SRSF2 
+    ## Probability: 4.519 %
     ## The next most probable node: Root->NPM1->IDH2->KRAS->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH2->NRAS->FLT3 
-    ## Probability: 3.032 %
+    ## Probability: 4.488 %
     ## The next most probable node: Root->NPM1->IDH2->PTPN11->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH2->NRAS 
-    ## Probability: 2.865 %
-    ## The next most probable node: Root->NPM1->NRAS 
-    ## Probability: 2.865 %
-    ## The next most probable node: Root->NPM1->IDH2->PTPN11->NRAS 
-    ## Probability: 2.865 %
-    ## The next most probable node: Root->NPM1->IDH1->FLT3->WT1 
-    ## Probability: 2.368 %
+    ## Probability: 4.488 %
+    ## The next most probable node: Root->NPM1->FLT3 
+    ## Probability: 3.182 %
+    ## The next most probable node: Root->NPM1->IDH1->KRAS->FLT3 
+    ## Probability: 3.182 %
+    ## The next most probable node: Root->NPM1->IDH1->PTPN11->FLT3 
+    ## Probability: 3.182 %
     ## The next most probable node: Root->NPM1->IDH2->FLT3->WT1 
-    ## Probability: 2.368 %
+    ## Probability: 3.109 %
+    ## The next most probable node: Root->NPM1->IDH2->NRAS 
+    ## Probability: 2.91 %
+    ## The next most probable node: Root->NPM1->NRAS 
+    ## Probability: 2.91 %
 
 ![](Demo_files/figure-gfm/next_mutations-1.png)<!-- -->

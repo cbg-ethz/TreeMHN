@@ -155,7 +155,8 @@ Here we use the tree dataset from [Morita et al. (2020)](https://www.nature.com/
 ```{r read_AML}
 # note that we summarize the mutations at the gene level
 load("AML_tree_obj.RData")
-plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]], 
+AML_38_idx <- which(AML$patients == "AML-38_AML-38-001")
+plot_tree(AML$trees[[AML_38_idx]], 
           mutations = AML$mutations, 
           tree_label = "AML-38-001") 
 ```
@@ -188,11 +189,11 @@ To convert a dataframe to an `TreeMHN` object, use the `input_tree_df` function.
 
 ## 3.2 Learn the MHN
 
-To ensure enough precision, we run stability selection with $\gamma = 0.1$ and a threshold of $95\%$ and obtain a vector of non-selected elements over $1000$ subsamples. Again, we recommend to run the code using the `parallel` package on a cluster.
+To ensure enough precision, we run stability selection with $\gamma = 0.07$ and a threshold of $95\%$ and obtain a vector of non-selected elements over $1000$ subsamples. Again, we recommend to run the code using the `parallel` package on a cluster.
 
 ```{r AML_SS, cache=TRUE}
 RNGkind("L'Ecuyer-CMRG")
-gamma <- 0.1
+gamma <- 0.07
 subsample_size <- floor(AML$N / 2)
 SS_res <- mclapply(c(1:1000), 
                    function(i) subsample_once(subsample_size, AML, gamma), 
@@ -234,8 +235,7 @@ plot_pathways(AML_Theta, mutations = AML$mutations, top_M = 10, n_order = 4)
 Given a particular tree and the estimated MHN, we can also find the next most probable mutational events using the `plot_next_mutations` function.
 
 ```{r next_mutations}
-plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, 
-                    mutations = AML$mutations, tree_label = "AML-38-001", 
-                    top_M = 20)
+plot_next_mutations(AML$n, AML$trees[[AML_38_idx]], AML_Theta, 
+                    mutations = AML$mutations, tree_label = "AML-38-001", top_M = 15)
 ```
 
