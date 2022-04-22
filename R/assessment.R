@@ -439,7 +439,7 @@ get_next_mutations <- function(tree, Theta, mutations = NULL) {
   for (i in c(1:nr_next_mutations)) {
     
     pos <- next_mutations[i]
-    node <- get_pathway(tree$nodes, pos, tree$parents)
+    node <- get_pathway_tree_list(tree$nodes, pos, tree$parents)
     next_lambdas[i] <- get_lambda(node, Theta)
     pathways[i] <- paste(c("Root", mutations[node]), collapse = "->")
     last_mutations[i] <- mutations[tree$nodes[pos]]
