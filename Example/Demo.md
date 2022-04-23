@@ -35,11 +35,11 @@ true_Theta <- tree_obj$Theta # true MHN
 trees <- tree_obj$trees # extract trees
 ```
 
-We can plot one of the trees using the `plot_tree` function:
+We can plot one of the trees using the `plot_tree_list` function:
 
 ``` r
 tree <- trees[[66]]
-plot_tree(tree, tree_obj$mutations)
+plot_tree_list(tree, tree_obj$mutations)
 ```
 
 ![](Demo_files/figure-gfm/display_one_tree-1.png)<!-- -->
@@ -186,9 +186,8 @@ al. (2020)](https://www.nature.com/articles/s41467-020-19119-8).
 ``` r
 # note that we summarize the mutations at the gene level
 load("AML_tree_obj.RData")
-plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]], 
-          mutations = AML$mutations, 
-          tree_label = "AML-38-001") 
+plot_tree_df(AML$tree_df[AML$tree_df$Tree_ID == match("AML-38_AML-38-001", AML$tree_labels),],
+             AML$mutations, "AML-38_AML-38-001")
 ```
 
 ![](Demo_files/figure-gfm/read_AML-1.png)<!-- -->
@@ -299,51 +298,31 @@ most probable mutational events using the `plot_next_mutations`
 function.
 
 ``` r
-plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, 
-                    mutations = AML$mutations, tree_label = "AML-38-001", 
-                    top_M = 20)
+tree_df <- AML$tree_df[AML$tree_df$Tree_ID == match("AML-09_AML-09-001", AML$tree_labels),]
+plot_next_mutations(AML$n, 
+                    tree_df,
+                    AML_Theta,
+                    AML$mutations,
+                    "AML-09_AML-09-001",
+                    8)
 ```
 
-    ## Top 20 most probable mutational events that will happen next:
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->NRAS 
-    ## Probability: 5.424 %
-    ## The next most probable node: Root->NPM1->IDH2->FLT3->SRSF2 
-    ## Probability: 4.404 %
-    ## The next most probable node: Root->NPM1->IDH2->SRSF2 
-    ## Probability: 4.394 %
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->SRSF2 
-    ## Probability: 4.394 %
-    ## The next most probable node: Root->NPM1->IDH2->PTPN11->SRSF2 
-    ## Probability: 4.394 %
+    ## Top 8 most probable mutational events that will happen next:
+    ## The next most probable node: Root->NPM1->KRAS->NRAS 
+    ## Probability: 16.461 %
     ## The next most probable node: Root->NPM1->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->IDH1->KRAS->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->IDH2->NRAS->PTPN11 
-    ## Probability: 3.412 %
-    ## The next most probable node: Root->NPM1->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH1->KRAS->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH1->PTPN11->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH2->KRAS->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH2->NRAS->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH2->PTPN11->FLT3 
-    ## Probability: 3.032 %
-    ## The next most probable node: Root->NPM1->IDH2->NRAS 
-    ## Probability: 2.865 %
+    ## Probability: 10.353 %
+    ## The next most probable node: Root->NPM1->KRAS->PTPN11 
+    ## Probability: 10.353 %
+    ## The next most probable node: Root->NPM1->KRAS->FLT3 
+    ## Probability: 9.202 %
     ## The next most probable node: Root->NPM1->NRAS 
-    ## Probability: 2.865 %
-    ## The next most probable node: Root->NPM1->IDH2->PTPN11->NRAS 
-    ## Probability: 2.865 %
-    ## The next most probable node: Root->NPM1->IDH1->FLT3->WT1 
-    ## Probability: 2.368 %
-    ## The next most probable node: Root->NPM1->IDH2->FLT3->WT1 
-    ## Probability: 2.368 %
+    ## Probability: 8.693 %
+    ## The next most probable node: Root->NPM1->FLT3->WT1 
+    ## Probability: 7.185 %
+    ## The next most probable node: Root->NPM1->FLT3->KRAS 
+    ## Probability: 5.511 %
+    ## The next most probable node: Root->DNMT3A 
+    ## Probability: 2.386 %
 
 ![](Demo_files/figure-gfm/next_mutations-1.png)<!-- -->

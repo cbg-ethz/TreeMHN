@@ -6,24 +6,24 @@
 \usage{
 plot_next_mutations(
   n,
-  tree,
+  tree_df,
   Theta,
   mutations = NULL,
   tree_label = NULL,
-  top_M = 1
+  top_M = 5
 )
 }
 \arguments{
 \item{n}{Number of mutational events.}
-
-\item{tree}{A tree in named list format.}
 
 \item{mutations}{A list of mutation names, which must be unique values.
 If no names are given, then the mutation IDs will be used.}
 
 \item{tree_label}{The title of the tree (Default: NULL).}
 
-\item{top_M}{Number of most probable mutational events to plot (Default: 1).}
+\item{top_M}{Number of most probable mutational events to plot (Default: 5).}
+
+\item{tree}{A tree in named list format.}
 }
 \description{
 Given a particular tree and a Mutual Hazard Network, this function 

@@ -1,6 +1,6 @@
 
-##' @name plot_tree
-##' @title Plot a tree
+##' @name plot_tree_list
+##' @title Plot a tree in named list format
 ##' @description This function plots a tree in named list format.
 ##' @param tree A tree in named list format.
 ##' @param mutations A list of mutation names corresponding to the mutation IDs.
@@ -8,7 +8,7 @@
 ##' @author Xiang Ge Luo
 ##' @import DiagrammeR
 ##' @export
-plot_tree <- function(tree, mutations, tree_label = NULL) {
+plot_tree_list <- function(tree, mutations, tree_label = NULL) {
 
   # graphviz dot language
   graph_dot <- "
@@ -46,6 +46,74 @@ plot_tree <- function(tree, mutations, tree_label = NULL) {
   g <- grViz(graph_dot)
   return(g)
 
+}
+
+##' @name plot_tree_df
+##' @title Plot a tree in data frame format
+##' @description This function plots a tree in data frame format.
+##' @param tree A tree in data frame format.
+##' @param mutations A list of mutation names corresponding to the mutation IDs.
+##' @param tree_label The title of the tree (Default: NULL).
+##' @author Xiang Ge Luo
+##' @import DiagrammeR
+##' @export
+plot_tree_df <- function(tree_df, mutations, tree_label = NULL) {
+  
+  # graphviz dot language
+  graph_dot <- "
+  digraph g {
+  labelloc='t';
+  fontname='Arial';
+  fontsize=28;
+  "
+  
+  # Add title
+  if (is.null(tree_label)) {
+    graph_dot <- paste(graph_dot, "label = 'Tree", tree_df$Tree_ID[1], "';")
+  } else {
+    graph_dot <- paste(graph_dot, "label = '", tree_label, "';")
+  }
+  
+  # Add nodes
+  node_labels <- c("Root", mutations[tree_df$Mutation_ID[-1]])
+  if ("Existing" %in% colnames(tree_df)) {
+    for (i in c(1:nrow(tree_df))) {
+      if (tree_df$Existing[i]) {
+        graph_dot <- paste(graph_dot, 
+                           tree_df$Node_ID[i], 
+                           "[label = '", 
+                           node_labels[i], 
+                           "', fontname='Arial', style=filled, color=paleturquoise3];")
+      } else {
+        graph_dot <- paste(graph_dot, 
+                           tree_df$Node_ID[i], 
+                           "[label = '", node_labels[i], "\n", tree_df$Prob[i], "%",
+                           "', fontname='Arial', style=filled, color=thistle];")
+      }
+    }
+  } else {
+    for (i in c(1:nrow(tree_df))) {
+      graph_dot <- paste(graph_dot, 
+                         tree_df$Node_ID[i], 
+                         "[label = '", 
+                         node_labels[i], 
+                         "', fontname='Arial'];")
+    }
+  }
+  
+  # Add edges
+  for (i in c(2:nrow(tree_df))) {
+    graph_dot <- paste(graph_dot, 
+                       tree_df$Parent_ID[i], 
+                       "->", 
+                       tree_df$Node_ID[i], 
+                       ";")
+  }
+  
+  graph_dot <- paste(graph_dot,"}")
+  g <- grViz(graph_dot)
+  return(g)
+  
 }
 
 ##' @name plot_pathways
@@ -111,16 +179,17 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 
 ##' @name plot_next_mutations
 ##' @title Plot the next most probable mutational events
-##' @description Given a particular tree and a Mutual Hazard Network, this function 
+##' @description Given a particular tree and a Mutual Hazard Network, this function
 ##' finds the next most probable mutational events.
 ##' @param n Number of mutational events.
 ##' @param tree A tree in named list format.
 ##' @param mutations A list of mutation names, which must be unique values.
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param tree_label The title of the tree (Default: NULL).
-##' @param top_M Number of most probable mutational events to plot (Default: 1).
+##' @param top_M Number of most probable mutational events to plot (Default: 5).
 ##' @export
-plot_next_mutations <- function(n, tree, Theta, mutations = NULL, tree_label = NULL, top_M = 1) {
+plot_next_mutations <- function(n, tree_df, Theta,
+                                mutations = NULL, tree_label = NULL, top_M = 5) {
 
   if (is.null(mutations)) {
     mutations <- as.character(seq(1,n))
@@ -132,38 +201,41 @@ plot_next_mutations <- function(n, tree, Theta, mutations = NULL, tree_label = N
     }
   }
 
-  next_mutations <- which(tree$in_tree == FALSE)
-  next_lambdas <- rep(0, length(next_mutations))
+  tree_df$Existing <- rep(1, nrow(tree_df))
+  tree_df$Prob <- rep(0, nrow(tree_df))
 
-  for (i in c(1:length(next_mutations))) {
-
-    pos <- next_mutations[i]
-    node <- get_pathway_tree_list(tree$nodes,pos,tree$parents)
-    next_lambdas[i] <- get_lambda(node, Theta)
-
+  next_mutations <- c()
+  next_lambdas <- c()
+  next_parents <- c()
+  for (i in c(1:nrow(tree_df))) {
+    pathway_i <- get_pathway_tree_df(tree_df, i)
+    siblings <- setdiff(tree_df$Mutation_ID[tree_df$Parent_ID == tree_df$Node_ID[i]], c(0))
+    for (j in setdiff(c(1:n), c(pathway_i, siblings))) {
+      next_mutations <- c(next_mutations, j)
+      next_lambdas <- c(next_lambdas, get_lambda(c(pathway_i, j), Theta))
+      next_parents <- c(next_parents, tree_df$Node_ID[i])
+    }
   }
 
+  cat("Top", top_M, "most probable mutational events that will happen next:\n")
   probs <- next_lambdas / sum(next_lambdas)
-
-  cat("Top",top_M,"most probable mutational events that will happen next:\n")
   top_M_idx <- order(probs, decreasing = TRUE)[c(1:top_M)]
-  temp <- tree
   for (i in c(1:top_M)) {
-
     idx <- top_M_idx[i]
-    most_likely_pos <- next_mutations[idx]
-    node <- get_pathway_tree_list(tree$nodes,most_likely_pos,tree$parents)
+    tree_df <- rbind(tree_df, data.frame(Patient_ID = tree_df$Patient_ID[1],
+                                         Tree_ID = tree_df$Tree_ID[1],
+                                         Node_ID = nrow(tree_df) + 1,
+                                         Mutation_ID = next_mutations[idx],
+                                         Parent_ID = next_parents[idx],
+                                         Existing = 0,
+                                         Prob = round(probs[idx]*100, 3)))
+    node <- get_pathway_tree_df(tree_df, nrow(tree_df))
     node <- mutations[node]
-    cat("The next most probable node:", paste(c("Root",node),collapse = "->"), "\n")
-    cat("Probability:", round(probs[idx]*100,3), "%\n")
-    temp$in_tree[most_likely_pos] <- TRUE
-
+    cat("The next most probable node:", paste(c("Root", node),collapse = "->"), "\n")
+    cat("Probability:", round(probs[idx]*100, 3), "%\n")
   }
 
-  temp <- output_one_tree_df(temp)
-  new_tree <- tree_df_to_trees(n, temp)$trees[[1]]
-
-  g <- plot_tree(new_tree,mutations,tree_label)
+  g <- plot_tree_df(tree_df, mutations, tree_label)
   return(g)
 
 }

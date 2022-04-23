@@ -40,10 +40,10 @@ true_Theta <- tree_obj$Theta # true MHN
 trees <- tree_obj$trees # extract trees
 ```
 
-We can plot one of the trees using the `plot_tree` function:
+We can plot one of the trees using the `plot_tree_list` function:
 ```{r display_one_tree}
 tree <- trees[[66]]
-plot_tree(tree, tree_obj$mutations)
+plot_tree_list(tree, tree_obj$mutations)
 ```
 
 ## 2.2 Learn MHN from the generated trees
@@ -155,9 +155,8 @@ Here we use the tree dataset from [Morita et al. (2020)](https://www.nature.com/
 ```{r read_AML}
 # note that we summarize the mutations at the gene level
 load("AML_tree_obj.RData")
-plot_tree(AML$trees[[which(AML$patients == "AML-38_AML-38-001")]], 
-          mutations = AML$mutations, 
-          tree_label = "AML-38-001") 
+plot_tree_df(AML$tree_df[AML$tree_df$Tree_ID == match("AML-38_AML-38-001", AML$tree_labels),],
+             AML$mutations, "AML-38_AML-38-001")
 ```
 
 To use another dataset, please make sure it is in dataframe format with five columns:
@@ -234,8 +233,12 @@ plot_pathways(AML_Theta, mutations = AML$mutations, top_M = 10, n_order = 4)
 Given a particular tree and the estimated MHN, we can also find the next most probable mutational events using the `plot_next_mutations` function.
 
 ```{r next_mutations}
-plot_next_mutations(AML$n, AML$trees[[21]], AML_Theta, 
-                    mutations = AML$mutations, tree_label = "AML-38-001", 
-                    top_M = 20)
+tree_df <- AML$tree_df[AML$tree_df$Tree_ID == match("AML-09_AML-09-001", AML$tree_labels),]
+plot_next_mutations(AML$n, 
+                    tree_df,
+                    AML_Theta,
+                    AML$mutations,
+                    "AML-09_AML-09-001",
+                    8)
 ```
 
