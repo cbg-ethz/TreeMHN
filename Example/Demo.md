@@ -147,9 +147,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     30.00     16.00      1.00     44.00     29.00      0.94      0.36      0.02 
+    ##     29.00     16.00      0.00     45.00     29.00      1.00      0.36      0.00 
     ##     FPR_P       MSE 
-    ##      0.02      0.89
+    ##      0.00      0.89
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
