@@ -219,6 +219,7 @@ plot_next_mutations <- function(n, tree_df, Theta,
 
   cat("Top", top_M, "most probable mutational events that will happen next:\n")
   probs <- next_lambdas / sum(next_lambdas)
+  llr <- log(probs * length(probs))
   top_M_idx <- order(probs, decreasing = TRUE)[c(1:top_M)]
   for (i in c(1:top_M)) {
     idx <- top_M_idx[i]
@@ -233,6 +234,7 @@ plot_next_mutations <- function(n, tree_df, Theta,
     node <- mutations[node]
     cat("The next most probable node:", paste(c("Root", node),collapse = "->"), "\n")
     cat("Probability:", round(probs[idx]*100, 3), "%\n")
+    cat("Log ratio model vs random:", round(llr[idx], 3), "\n")
   }
 
   g <- plot_tree_df(tree_df, mutations, tree_label)
