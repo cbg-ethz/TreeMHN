@@ -26,6 +26,6 @@ If no names are given, then the mutation IDs will be used.}
 \item{tree}{A tree in named list format.}
 }
 \description{
-Given a particular tree and a Mutual Hazard Network, this function 
+Given a particular tree and a Mutual Hazard Network, this function
 finds the next most probable mutational events.
 }
