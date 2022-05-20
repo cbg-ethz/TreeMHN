@@ -51,13 +51,15 @@ plot_tree_list <- function(tree, mutations, tree_label = NULL) {
 ##' @name plot_tree_df
 ##' @title Plot a tree in data frame format
 ##' @description This function plots a tree in data frame format.
-##' @param tree A tree in data frame format.
+##' @param tree_df A tree in data frame format.
 ##' @param mutations A list of mutation names corresponding to the mutation IDs.
 ##' @param tree_label The title of the tree (Default: NULL).
+##' @param main_node_color The color of the nodes in the main tree structure (Default: pale turquoise).
+##' @param next_node_color The color of the nodes in the augmented tree structure (Default: thistle).
 ##' @author Xiang Ge Luo
 ##' @import DiagrammeR
 ##' @export
-plot_tree_df <- function(tree_df, mutations, tree_label = NULL) {
+plot_tree_df <- function(tree_df, mutations, tree_label = NULL, main_node_color = "paleturquoise3", next_node_color = "thistle") {
   
   # graphviz dot language
   graph_dot <- "
@@ -83,12 +85,26 @@ plot_tree_df <- function(tree_df, mutations, tree_label = NULL) {
                            tree_df$Node_ID[i], 
                            "[label = '", 
                            node_labels[i], 
-                           "', fontname='Arial', style=filled, color=paleturquoise3];")
+                           "', fontname='Arial', style=filled, color=",
+                           main_node_color,
+                           "];")
       } else {
-        graph_dot <- paste(graph_dot, 
-                           tree_df$Node_ID[i], 
-                           "[label = '", node_labels[i], "\n", tree_df$Prob[i], "%",
-                           "', fontname='Arial', style=filled, color=thistle];")
+        if ("Prob" %in% colnames(tree_df)) {
+          graph_dot <- paste(graph_dot, 
+                             tree_df$Node_ID[i], 
+                             "[label = '", node_labels[i], "\n", tree_df$Prob[i], "%",
+                             "', fontname='Arial', style=filled, color=",
+                             next_node_color,
+                             "];")
+        } else {
+          graph_dot <- paste(graph_dot, 
+                             tree_df$Node_ID[i], 
+                             "[label = '", node_labels[i],
+                             "', fontname='Arial', style=filled, color=",
+                             next_node_color,
+                             "];")
+        }
+        
       }
     }
   } else {
@@ -97,7 +113,9 @@ plot_tree_df <- function(tree_df, mutations, tree_label = NULL) {
                          tree_df$Node_ID[i], 
                          "[label = '", 
                          node_labels[i], 
-                         "', fontname='Arial'];")
+                         "', fontname='Arial', style=filled, color=",
+                         main_node_color,
+                         "];")
     }
   }
   

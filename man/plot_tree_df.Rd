@@ -4,14 +4,24 @@
 \alias{plot_tree_df}
 \title{Plot a tree in data frame format}
 \usage{
-plot_tree_df(tree_df, mutations, tree_label = NULL)
+plot_tree_df(
+  tree_df,
+  mutations,
+  tree_label = NULL,
+  main_node_color = "paleturquoise3",
+  next_node_color = "thistle"
+)
 }
 \arguments{
+\item{tree_df}{A tree in data frame format.}
+
 \item{mutations}{A list of mutation names corresponding to the mutation IDs.}
 
 \item{tree_label}{The title of the tree (Default: NULL).}
 
-\item{tree}{A tree in data frame format.}
+\item{main_node_color}{The color of the nodes in the main tree structure (Default: pale turquoise).}
+
+\item{next_node_color}{The color of the nodes in the augmented tree structure (Default: thistle).}
 }
 \description{
 This function plots a tree in data frame format.
