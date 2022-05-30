@@ -417,7 +417,7 @@ get_observed_pathways <- function(tree_obj) {
 }
 
 ##' @import dplyr
-get_next_mutations <- function(tree, Theta, mutations = NULL) {
+get_next_mutations <- function(tree_df, Theta, mutations = NULL) {
   
   n <- nrow(Theta)
   
@@ -431,30 +431,29 @@ get_next_mutations <- function(tree, Theta, mutations = NULL) {
     }
   }
   
-  next_mutations <- which(tree$in_tree == FALSE)
-  nr_next_mutations <- length(next_mutations)
-  next_lambdas <- rep(0, nr_next_mutations)
-  pathways <- rep("", nr_next_mutations)
-  last_mutations <- rep("", nr_next_mutations)
-  
-  for (i in c(1:nr_next_mutations)) {
-    
-    pos <- next_mutations[i]
-    node <- get_pathway_tree_list(tree$nodes, pos, tree$parents)
-    next_lambdas[i] <- get_lambda(node, Theta)
-    pathways[i] <- paste(c("Root", mutations[node]), collapse = "->")
-    last_mutations[i] <- mutations[tree$nodes[pos]]
-    
+  next_mutations <- c()
+  next_lambdas <- c()
+  next_parents <- c()
+  pathways <- c()
+  for (i in c(1:nrow(tree_df))) {
+    pathway_i <- get_pathway_tree_df(tree_df, i)
+    siblings <- setdiff(tree_df$Mutation_ID[tree_df$Parent_ID == tree_df$Node_ID[i]], c(0))
+    for (j in setdiff(c(1:n), c(pathway_i, siblings))) {
+      pathway_i_j <- c(pathway_i, j)
+      pathways <- c(pathways, paste(c("Root", mutations[pathway_i_j]), collapse = "->"))
+      next_mutations <- c(next_mutations, j)
+      next_lambdas <- c(next_lambdas, get_lambda(pathway_i_j, Theta))
+      next_parents <- c(next_parents, tree_df$Node_ID[i])
+    }
   }
+  probs <- next_lambdas / sum(next_lambdas)
   
-  df <- data.frame(pathways, last_mutations, next_lambdas) %>%
-    mutate(probs = next_lambdas / sum(next_lambdas)) %>%
-    select(!next_lambdas) %>%
+  
+  df <- data.frame(pathways, probs) %>%
     arrange(desc(probs)) %>%
-    mutate(rank = seq(1, nr_next_mutations))
+    mutate(rank = c(1:length(probs)))
   
   return(df)
   
 }
-
 
