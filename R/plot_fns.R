@@ -270,14 +270,15 @@ plot_next_mutations <- function(n, tree_df, Theta,
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param top_M Number of most probable pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
+##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
 ##' @author Xiang Ge Luo
 ##' @import ggplot2
 ##' @export
-plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, mutation_colors = NULL) {
+plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, mutation_colors = NULL, prob_digits = 2) {
   
   n <- nrow(Theta)
   pathway_df <- Theta_to_pathways_w_sampling(Theta, top_M, lambda_s)
-  pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.001) # Avoid overlapping labels
+  pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.0001) # Avoid overlapping labels
   
   waiting_time <- c()
   probability <- c()
@@ -330,7 +331,7 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
                                yend = factor(probability2, ordered = TRUE),
                                label = NULL),
                  arrow = arrow(length = unit(0.1, "cm"))) +
-    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%"))) +
+    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, prob_digits), "%"))) +
     xlim(c(0, max(df$waiting_time)*1.1))
   
   if (!is.null(mutation_colors)) {
@@ -352,16 +353,17 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
 ##' @param top_M Number of most frequent pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
 ##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
+##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
 ##' @author Xiang Ge Luo
 ##' @export
-plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mutation_colors = NULL) {
+plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mutation_colors = NULL, prob_digits = 2) {
   
   n <- nrow(Theta)
   mutations <- tree_obj$mutations
   
   pathway_df <- get_observed_pathways(tree_obj)
   pathway_df <- pathway_df[c(1:top_M),]
-  pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.001) # Avoid overlapping labels
+  pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.0001) # Avoid overlapping labels
   
   waiting_time <- c()
   probability <- c()
@@ -414,7 +416,7 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mu
                                yend = factor(probability2, ordered = TRUE),
                                label = NULL),
                  arrow = arrow(length = unit(0.1, "cm"))) +
-    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%"))) +
+    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, prob_digits), "%"))) +
     xlim(c(0, max(df$waiting_time)*1.1))
   
   if (!is.null(mutation_colors)) {

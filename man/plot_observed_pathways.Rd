@@ -9,7 +9,8 @@ plot_observed_pathways(
   Theta,
   top_M = 10,
   lambda_s = 1,
-  mutation_colors = NULL
+  mutation_colors = NULL,
+  prob_digits = 2
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ plot_observed_pathways(
 \item{lambda_s}{Sampling rate (Default: 1)}
 
 \item{mutation_colors}{A named vector with the color codes for all mutations (Default: NULL)}
+
+\item{prob_digits}{Number of digits to show for the probabilities (Default: 2)}
 }
 \description{
 This function takes a cohort of mutation trees and the estimated

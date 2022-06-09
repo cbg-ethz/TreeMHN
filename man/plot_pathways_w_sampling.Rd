@@ -9,7 +9,8 @@ plot_pathways_w_sampling(
   mutations,
   top_M = 10,
   lambda_s = 1,
-  mutation_colors = NULL
+  mutation_colors = NULL,
+  prob_digits = 2
 )
 }
 \arguments{
@@ -21,6 +22,8 @@ If no names are given, then the mutation IDs will be used.}
 \item{top_M}{Number of most probable pathways to plot (Default: 10).}
 
 \item{lambda_s}{Sampling rate (Default: 1)}
+
+\item{prob_digits}{Number of digits to show for the probabilities (Default: 2)}
 }
 \description{
 This function takes a Mutual Hazard Network as input and plot the most probable
