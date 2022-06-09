@@ -9,7 +9,6 @@ plot_observed_pathways(
   Theta,
   top_M = 10,
   lambda_s = 1,
-  log2 = TRUE,
   mutation_colors = NULL
 )
 }
@@ -21,8 +20,6 @@ plot_observed_pathways(
 \item{top_M}{Number of most frequent pathways to plot (Default: 10).}
 
 \item{lambda_s}{Sampling rate (Default: 1)}
-
-\item{log2}{A boolean flag indicating whether the x axis is scaled by log2.}
 
 \item{mutation_colors}{A named vector with the color codes for all mutations (Default: NULL)}
 }

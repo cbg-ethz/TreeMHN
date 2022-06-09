@@ -270,12 +270,10 @@ plot_next_mutations <- function(n, tree_df, Theta,
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param top_M Number of most probable pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
-##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
 ##' @author Xiang Ge Luo
 ##' @import ggplot2
 ##' @export
-plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, 
-                                     log2 = TRUE, mutation_colors = NULL) {
+plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, mutation_colors = NULL) {
   
   n <- nrow(Theta)
   pathway_df <- Theta_to_pathways_w_sampling(Theta, top_M, lambda_s)
@@ -284,21 +282,36 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
   waiting_time <- c()
   probability <- c()
   labels <- c()
+  probability2 <- c()
+  line_start <- c()
+  line_end <- c()
+  
   for (i in c(1:top_M)) {
     p <- as.integer(unlist(strsplit(pathway_df$pathways[i], "_")))
-    labels <- c(labels, mutations[p])
-    probability <- c(probability, rep(pathway_df$probs[i], length(p)))
+    labels <- c(labels, "Root", mutations[p])
+    probability <- c(probability, rep(pathway_df$probs[i], length(p) + 1))
+    probability2 <- c(probability2, rep(pathway_df$probs[i], length(p)))
     times <- rep(0, length(p))
     for (j in c(1:length(p))) {
       pp <- p[c(1:j)]
       denom_set <- get_children(n, pp[-length(pp)])
-      denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
-      times[j] <- 1 / denom
+      denom <- lambda_s + sum(sapply(denom_set, function (l) get_lambda(l, Theta)))
+      time_diff <- 1 / denom
+      if (j == 1) {
+        times[j] <- time_diff
+        line_start <- c(line_start, 0.1)
+        line_end <- c(line_end, time_diff - nchar(mutations[p[j]]) / 50)
+      } else {
+        times[j] <- times[j - 1] + time_diff
+        line_start <- c(line_start, times[j - 1] + nchar(mutations[p[j - 1]]) / 50)
+        line_end <- c(line_end, times[j - 1] + time_diff - nchar(mutations[p[j]]) / 50)
+      }
     }
-    waiting_time <- c(waiting_time, cumsum(times))
+    waiting_time <- c(waiting_time, 0, times)
   }
   
   df <- data.frame(waiting_time, probability, labels)
+  df2 <- data.frame(probability2, line_start, line_end)
   
   g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
     geom_label(aes(fill = factor(labels))) +
@@ -310,15 +323,19 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
           axis.text = element_text(size=14),
           legend.text = element_text(size=16),
           legend.title = element_text(size=16)) +
-    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%")))
-  
-  if (log2) {
-    g <- g + scale_x_continuous(trans='log2')
-  }
+    geom_segment(data = df2, 
+                 mapping = aes(x = line_start, 
+                               xend = line_end,
+                               y = factor(probability2, ordered = TRUE),
+                               yend = factor(probability2, ordered = TRUE),
+                               label = NULL),
+                 arrow = arrow(length = unit(0.1, "cm"))) +
+    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%"))) +
+    xlim(c(0, max(df$waiting_time)*1.1))
   
   if (!is.null(mutation_colors)) {
-    
-    names(mutation_colors) <- mutations
+    mutation_colors <- c("#E0E0E0", mutation_colors)
+    names(mutation_colors) <- c("Root", mutations)
     g <- g + scale_fill_manual(values = mutation_colors)
   }
   
@@ -334,38 +351,51 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
 ##' @param Theta An n-by-n matrix representing a Mutual Hazard Network.
 ##' @param top_M Number of most frequent pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
-##' @param log2 A boolean flag indicating whether the x axis is scaled by log2.
 ##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @author Xiang Ge Luo
 ##' @export
-plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, 
-                                   log2 = TRUE, mutation_colors = NULL) {
+plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mutation_colors = NULL) {
   
   n <- nrow(Theta)
   mutations <- tree_obj$mutations
   
   pathway_df <- get_observed_pathways(tree_obj)
   pathway_df <- pathway_df[c(1:top_M),]
-  pathway_df$probs <- pathway_df$probs*100 
+  pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.001) # Avoid overlapping labels
   
   waiting_time <- c()
   probability <- c()
   labels <- c()
+  probability2 <- c()
+  line_start <- c()
+  line_end <- c()
+  
   for (i in c(1:top_M)) {
     p <- as.integer(unlist(strsplit(pathway_df$pathways[i], "_")))
-    labels <- c(labels, mutations[p])
-    probability <- c(probability, rep(pathway_df$probs[i] + rnorm(1, sd = 0.001), length(p))) # Avoid overlapping labels
+    labels <- c(labels, "Root", mutations[p])
+    probability <- c(probability, rep(pathway_df$probs[i], length(p) + 1))
+    probability2 <- c(probability2, rep(pathway_df$probs[i], length(p)))
     times <- rep(0, length(p))
     for (j in c(1:length(p))) {
       pp <- p[c(1:j)]
-      denom_set <- TreeMHN:::get_children(n, pp[-length(pp)])
-      denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
-      times[j] <- 1 / denom
+      denom_set <- get_children(n, pp[-length(pp)])
+      denom <- lambda_s + sum(sapply(denom_set, function (l) get_lambda(l, Theta)))
+      time_diff <- 1 / denom
+      if (j == 1) {
+        times[j] <- time_diff
+        line_start <- c(line_start, 0.1)
+        line_end <- c(line_end, time_diff - nchar(mutations[p[j]]) / 50)
+      } else {
+        times[j] <- times[j - 1] + time_diff
+        line_start <- c(line_start, times[j - 1] + nchar(mutations[p[j - 1]]) / 50)
+        line_end <- c(line_end, times[j - 1] + time_diff - nchar(mutations[p[j]]) / 50)
+      }
     }
-    waiting_time <- c(waiting_time, cumsum(times))
+    waiting_time <- c(waiting_time, 0, times)
   }
   
   df <- data.frame(waiting_time, probability, labels)
+  df2 <- data.frame(probability2, line_start, line_end)
   
   g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
     geom_label(aes(fill = factor(labels))) +
@@ -377,13 +407,19 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1,
           axis.text = element_text(size=14),
           legend.text = element_text(size=16),
           legend.title = element_text(size=16)) +
-    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%")))
-  
-  if (log2) {
-    g <- g + scale_x_continuous(trans='log2')
-  }
+    geom_segment(data = df2, 
+                 mapping = aes(x = line_start, 
+                               xend = line_end,
+                               y = factor(probability2, ordered = TRUE),
+                               yend = factor(probability2, ordered = TRUE),
+                               label = NULL),
+                 arrow = arrow(length = unit(0.1, "cm"))) +
+    scale_y_discrete(labels=sapply(sort(pathway_df$probs), function(x) paste0(round(x, 3), "%"))) +
+    xlim(c(0, max(df$waiting_time)*1.1))
   
   if (!is.null(mutation_colors)) {
+    mutation_colors <- c("#E0E0E0", mutation_colors)
+    names(mutation_colors) <- c("Root", mutations)
     g <- g + scale_fill_manual(values = mutation_colors)
   }
   

@@ -9,7 +9,6 @@ plot_pathways_w_sampling(
   mutations,
   top_M = 10,
   lambda_s = 1,
-  log2 = TRUE,
   mutation_colors = NULL
 )
 }
@@ -22,8 +21,6 @@ If no names are given, then the mutation IDs will be used.}
 \item{top_M}{Number of most probable pathways to plot (Default: 10).}
 
 \item{lambda_s}{Sampling rate (Default: 1)}
-
-\item{log2}{A boolean flag indicating whether the x axis is scaled by log2.}
 }
 \description{
 This function takes a Mutual Hazard Network as input and plot the most probable
