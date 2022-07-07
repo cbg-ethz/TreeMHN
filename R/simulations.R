@@ -89,7 +89,7 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
     }
   }
   tree_df <- do.call(rbind, tree_dfs) %>% 
-    select(Patient_ID, Tree_ID, Node_ID, Mutation_ID, Parent_ID)
+    select("Patient_ID", "Tree_ID", "Node_ID", "Mutation_ID", "Parent_ID")
   
   if (perturb) {
     tree_df <- perturb_trees(n, tree_df, epsilon)
@@ -112,6 +112,7 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
 
 
 ##' @import dplyr
+##' @importFrom stats rexp
 generate_tree_MHN <- function(n, Theta, lambda_s) {
   
   # sampling time
@@ -171,12 +172,11 @@ generate_tree_MHN <- function(n, Theta, lambda_s) {
     
   }
   
-  tree_df <- tree_df %>% select(Node_ID, Mutation_ID, Parent_ID)
+  tree_df <- tree_df %>% select("Node_ID", "Mutation_ID", "Parent_ID")
   
   return(tree_df)
   
 }
-
 
 perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 
@@ -186,7 +186,7 @@ perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 
   for (i in c(1:length(unique_tree_IDs))) {
 
-    one_tree_df <- TreeMHN:::sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
+    one_tree_df <- sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
     new_tree_df <- rbind(new_tree_df, perturb_tree(n, one_tree_df, epsilon))
 
   }
@@ -195,6 +195,7 @@ perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 
 }
 
+##' @importFrom stats runif
 perturb_tree <- function(n, one_tree_df, epsilon = 0.05) {
 
   nr_nodes <- nrow(one_tree_df)

@@ -9,8 +9,6 @@ sort_one_tree_df(one_tree_df)
 }
 \arguments{
 \item{one_tree_df}{A tree data frame for a single patient/tumor}
-
-\item{n}{Number of mutational events}
 }
 \value{
 A sorted tree data frame

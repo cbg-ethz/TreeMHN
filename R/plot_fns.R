@@ -200,7 +200,8 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 ##' @description Given a particular tree and a Mutual Hazard Network, this function
 ##' finds the next most probable mutational events.
 ##' @param n Number of mutational events.
-##' @param tree A tree in named list format.
+##' @param tree_df A tree in data frame format.
+##' @param Theta An n-by-n matrix representing a Mutual Hazard Network
 ##' @param mutations A list of mutation names, which must be unique values.
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param tree_label The title of the tree (Default: NULL).
@@ -270,6 +271,7 @@ plot_next_mutations <- function(n, tree_df, Theta,
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param top_M Number of most probable pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
+##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
 ##' @author Xiang Ge Luo
 ##' @import ggplot2

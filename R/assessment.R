@@ -97,7 +97,7 @@ compare_Theta <- function(true_Theta, pred_Theta, q = 1e-2) {
 ##' or the data frame containing also the pathways (Default: TRUE).
 ##' @return Pathway probabilities
 ##' @author Xiang Ge Luo
-##' @import gtools
+##' @importFrom gtools permutations
 ##' @export
 Theta_to_pathways <- function(Theta, n_order = 4, prob_only = TRUE) {
 
@@ -217,6 +217,7 @@ trees_to_revolver_W <- function(n, tree_df) {
 ##' @return A list containing the matrix W and the pathway probabilities 
 ##' inferred from the row-normalized W matrix of the REVOLVER algorithm.
 ##' @author Xiang Ge Luo
+##' @importFrom gtools permutations
 ##' @export
 get_revolver_pathways <- function(n, tree_df, n_order = 4) {
 
@@ -224,7 +225,7 @@ get_revolver_pathways <- function(n, tree_df, n_order = 4) {
   if (n < n_order) {
     stop("The number of mutations is smaller than the order. Please check again...")
   }
-  pathways <- cbind(0, gtools::permutations(n, n_order)) + 1
+  pathways <- cbind(0, permutations(n, n_order)) + 1
   probs <- rep(1, nrow(pathways))
 
   for (i in c(1:nrow(pathways))) {
@@ -257,13 +258,14 @@ get_revolver_pathways <- function(n, tree_df, n_order = 4) {
 ##' @return A list containing the matrix beta and the pathway probabilities 
 ##' inferred from the row-normalized beta matrix of the HINTRA algorithm.
 ##' @author Xiang Ge Luo
+##' @importFrom gtools combinations permutations
 ##' @export
 get_hintra_pathways <- function(n, tree_df, n_order = 4) {
 
   hintra_B_vec <- c("0")
   to_mask <- list()
   for (r in c(1:(n_order - 1))) {
-    pathways <- gtools::combinations(n,r)
+    pathways <- combinations(n,r)
     temp <- apply(pathways, 1, function(x) paste0(x,collapse = "_"))
     hintra_B_vec <- c(hintra_B_vec,temp)
     to_mask <- append(to_mask, apply(pathways,1,list))
@@ -303,7 +305,7 @@ get_hintra_pathways <- function(n, tree_df, n_order = 4) {
 
   B <- B / rowSums(B)
 
-  pathways <- gtools::permutations(n, n_order)
+  pathways <- permutations(n, n_order)
   probs <- B[1, pathways[,1]]
 
   for (i in c(1:nrow(pathways))) {
@@ -332,7 +334,7 @@ get_children <- function(n, pathway) {
   
 }
 
-Theta_to_pathways_w_sampling <- function(Theta, top_M = 10, lambda_s = 1) {
+Theta_to_pathways_w_sampling <- function(Theta, top_M = 10, lambda_s = 1, mutation_mapping = NULL) {
   
   n <- nrow(Theta)
   pathways <- vector("list", top_M)
@@ -346,15 +348,15 @@ Theta_to_pathways_w_sampling <- function(Theta, top_M = 10, lambda_s = 1) {
       p_prob <- 1
       for (i in c(1:length(p))) {
         pp <- p[c(1:i)]
-        num <- TreeMHN:::get_lambda(pp, Theta)
+        num <- get_lambda(pp, Theta)
         denom_set <- get_children(n, pp[-length(pp)])
-        denom <- lambda_s + sum(sapply(denom_set, function (l) TreeMHN:::get_lambda(l, Theta)))
+        denom <- lambda_s + sum(sapply(denom_set, function (l) get_lambda(l, Theta)))
         p_prob <- p_prob * num / denom
       }
       # times the probability of the pathway stopping at the sampling event
       p_ch <- get_children(n, p)
       if (length(p_ch) > 0) {
-        p_prob <- p_prob * lambda_s / (lambda_s + sum(sapply(p_ch, function (l) TreeMHN:::get_lambda(l, Theta)))) 
+        p_prob <- p_prob * lambda_s / (lambda_s + sum(sapply(p_ch, function (l) get_lambda(l, Theta)))) 
       }
       if (p_prob > min(probs)) {
         to_replace <- which.min(probs)
@@ -368,7 +370,12 @@ Theta_to_pathways_w_sampling <- function(Theta, top_M = 10, lambda_s = 1) {
   }
   
   probs <- probs / (1 - lambda_s / (lambda_s + sum(exp(diag(Theta)))))
-  pathways <- sapply(pathways, function (x) paste(x, collapse = "_"))
+  if (is.null(mutation_mapping)) {
+    pathways <- sapply(pathways, function (x) paste(x, collapse = "_"))
+  } else {
+    pathways <- sapply(pathways, function (x) paste(mutation_mapping[x], collapse = "_"))
+  }
+  
   df <- data.frame(pathways, probs) %>% arrange(desc(probs))
   return(df)
   
