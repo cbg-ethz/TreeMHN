@@ -7,6 +7,7 @@
 ##' meaning that one mutation is inhibiting another mutation (Default: 0.9)
 ##' @return An n-by-n matrix representing the MHN
 ##' @author Rudolf Schill, Xiang Ge Luo
+##' @importFrom stats rgamma runif
 ##' @references Schill et al. (2020). Modelling cancer progression using Mutual Hazard Networks. Bioinformatics, 36(1), 241–249.
 random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
   Theta  <- matrix(0, nrow=n, ncol=n)
