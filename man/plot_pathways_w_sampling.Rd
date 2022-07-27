@@ -23,6 +23,8 @@ If no names are given, then the mutation IDs will be used.}
 
 \item{lambda_s}{Sampling rate (Default: 1)}
 
+\item{mutation_colors}{A named vector with the color codes for all mutations (Default: NULL)}
+
 \item{prob_digits}{Number of digits to show for the probabilities (Default: 2)}
 }
 \description{

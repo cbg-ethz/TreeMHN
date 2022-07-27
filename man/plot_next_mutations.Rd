@@ -16,14 +16,16 @@ plot_next_mutations(
 \arguments{
 \item{n}{Number of mutational events.}
 
+\item{tree_df}{A tree in data frame format.}
+
+\item{Theta}{An n-by-n matrix representing a Mutual Hazard Network}
+
 \item{mutations}{A list of mutation names, which must be unique values.
 If no names are given, then the mutation IDs will be used.}
 
 \item{tree_label}{The title of the tree (Default: NULL).}
 
 \item{top_M}{Number of most probable mutational events to plot (Default: 5).}
-
-\item{tree}{A tree in named list format.}
 }
 \description{
 Given a particular tree and a Mutual Hazard Network, this function
