@@ -9,7 +9,7 @@
 ##' @import DiagrammeR
 ##' @export
 plot_tree_list <- function(tree, mutations, tree_label = NULL) {
-
+  
   # graphviz dot language
   graph_dot <- "
   digraph g {
@@ -17,14 +17,14 @@ plot_tree_list <- function(tree, mutations, tree_label = NULL) {
   fontname='Arial';
   fontsize=28;
   "
-
+  
   # Add title
   if (is.null(tree_label)) {
     graph_dot <- paste(graph_dot, "label = 'Tree", tree$tree_ID, "';")
   } else {
     graph_dot <- paste(graph_dot, "label = '", tree_label, "';")
   }
-
+  
   # Add nodes
   nr_nodes <- sum(tree$in_tree)
   node_idx <- c(1:length(tree$nodes))[tree$in_tree]
@@ -35,17 +35,17 @@ plot_tree_list <- function(tree, mutations, tree_label = NULL) {
                        "[label = '", node_labels[i], 
                        "', fontname='Arial'];")
   }
-
+  
   # Add edges
   parents <- tree$parents[tree$in_tree]
   for (i in c(2:nr_nodes)) {
     graph_dot <- paste(graph_dot, parents[i], "->", node_idx[i], ";")
   }
-
+  
   graph_dot <- paste(graph_dot,"}")
   g <- grViz(graph_dot)
   return(g)
-
+  
 }
 
 ##' @name plot_tree_df
@@ -148,7 +148,7 @@ plot_tree_df <- function(tree_df, mutations, tree_label = NULL, main_node_color 
 ##' @import ggplot2
 ##' @export
 plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2 = TRUE) {
-
+  
   n <- nrow(Theta)
   if (is.null(mutations)) {
     mutations <- as.character(seq(1,n))
@@ -174,7 +174,7 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
     labels <- c(labels, mutations[pathways[,i]])
   }
   df <- data.frame(waiting_time,probability,labels)
-
+  
   g <- ggplot(df, aes(x = waiting_time, y = factor(probability, ordered = TRUE), label = labels)) +
     geom_label(aes(fill = factor(labels))) +
     xlab("Expected waiting time relative to the sampling rate") + ylab("Probability") +
@@ -186,13 +186,13 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
           legend.text = element_text(size=16),
           legend.title = element_text(size=16)) +
     scale_y_discrete(labels=sapply(sort(pathways$prob), function(x) paste0(round(x, 3), "%")))
-
+  
   if (log2) {
     g <- g + scale_x_continuous(trans='log2')
   }
-
+  
   return(g)
-
+  
 }
 
 ##' @name plot_next_mutations
@@ -200,7 +200,8 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 ##' @description Given a particular tree and a Mutual Hazard Network, this function
 ##' finds the next most probable mutational events.
 ##' @param n Number of mutational events.
-##' @param tree A tree in named list format.
+##' @param tree_df A tree in data frame format.
+##' @param Theta An n-by-n matrix representing a Mutual Hazard Network
 ##' @param mutations A list of mutation names, which must be unique values.
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param tree_label The title of the tree (Default: NULL).
@@ -208,7 +209,7 @@ plot_pathways <- function(Theta, mutations = NULL, n_order = 4, top_M = 10, log2
 ##' @export
 plot_next_mutations <- function(n, tree_df, Theta,
                                 mutations = NULL, tree_label = NULL, top_M = 5) {
-
+  
   if (is.null(mutations)) {
     mutations <- as.character(seq(1,n))
   } else {
@@ -218,10 +219,10 @@ plot_next_mutations <- function(n, tree_df, Theta,
       stop("Mutation names must be unique. Please check again...")
     }
   }
-
+  
   tree_df$Existing <- rep(1, nrow(tree_df))
   tree_df$Prob <- rep(0, nrow(tree_df))
-
+  
   next_mutations <- c()
   next_lambdas <- c()
   next_parents <- c()
@@ -234,7 +235,7 @@ plot_next_mutations <- function(n, tree_df, Theta,
       next_parents <- c(next_parents, tree_df$Node_ID[i])
     }
   }
-
+  
   cat("Top", top_M, "most probable mutational events that will happen next:\n")
   probs <- next_lambdas / sum(next_lambdas)
   llr <- log(probs * length(probs))
@@ -254,10 +255,10 @@ plot_next_mutations <- function(n, tree_df, Theta,
     cat("Probability:", round(probs[idx]*100, 3), "%\n")
     cat("Log ratio model vs random:", round(llr[idx], 3), "\n")
   }
-
+  
   g <- plot_tree_df(tree_df, mutations, tree_label)
   return(g)
-
+  
 }
 
 
@@ -270,9 +271,11 @@ plot_next_mutations <- function(n, tree_df, Theta,
 ##' If no names are given, then the mutation IDs will be used.
 ##' @param top_M Number of most probable pathways to plot (Default: 10).
 ##' @param lambda_s Sampling rate (Default: 1)
+##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
 ##' @author Xiang Ge Luo
 ##' @import ggplot2
+##' @importFrom stats rnorm
 ##' @export
 plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, mutation_colors = NULL, prob_digits = 2) {
   
@@ -355,6 +358,7 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
 ##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
 ##' @author Xiang Ge Luo
+##' @importFrom stats rnorm
 ##' @export
 plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mutation_colors = NULL, prob_digits = 2) {
   
@@ -443,6 +447,7 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mu
 ##' @import ggplot2
 ##' @importFrom gridExtra grid.arrange
 ##' @importFrom reshape2 melt
+##' @importFrom grDevices colors
 ##' @export
 plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, to_show = NULL) {
   
@@ -463,7 +468,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
   if (sort_diag) {
     idx <- order(diag(Theta), decreasing = TRUE)
   } else {
-      idx <- c(1:n)
+    idx <- c(1:n)
   }
   
   if (!is.null(to_show)) {
@@ -510,26 +515,46 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
       to_show <- sapply(c(1:n), function (i) any(Theta[i,-i] != 0) || any(Theta[-i,i] != 0))
       to_show_mat <- Theta[to_show, to_show]
       dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
+      to_show_diag <- matrix(diag(Theta)[to_show], ncol = 1)
+      rownames(to_show_diag) <- mutations[to_show]
+      colnames(to_show_diag) <- c("temp")
+      diag(to_show_mat) <- 0
       
       if (sort_diag) {
-        to_show_idx <- order(diag(to_show_mat), decreasing = TRUE)
-        diag(to_show_mat) <- 0
-        temp <- melt(to_show_mat[to_show_idx, to_show_idx])
+        to_show_idx <- order(to_show_diag, decreasing = TRUE)
+        to_show_diag <- as.matrix(to_show_diag[to_show_idx,])
+        
+        to_show_no_diag <- melt(to_show_mat[to_show_idx, to_show_idx])
       } else {
         diag(to_show_mat) <- 0
-        temp <- melt(to_show_mat)
+        to_show_no_diag <- melt(to_show_mat)
       }
       
     } else {
       to_show_mat <- Theta[to_show, to_show]
       dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
+      to_show_diag <- matrix(diag(Theta)[to_show], ncol = 1)
+      rownames(to_show_diag) <- mutations[to_show]
+      colnames(to_show_diag) <- c("temp")
       diag(to_show_mat) <- 0
-      temp <- melt(to_show_mat)
+      to_show_no_diag <- melt(to_show_mat)
     }
     
-    G <- ggplot(temp, aes(x = Var2, y = Var1)) + 
+    g1 <- melt(to_show_diag) %>%
+      ggplot(aes(x = Var2, y = Var1)) + 
+      geom_raster(aes(fill=value)) +
+      scale_fill_gradient(low = "white", high = colors()[77], 
+                          labels = function(x) sprintf("%.1f", round(x, 1))) +
+      scale_y_discrete(limits=rev) +
+      theme(axis.text.x=element_blank(),
+            axis.ticks=element_blank(),
+            legend.title = element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank())
+    
+    g2 <- ggplot(to_show_no_diag, aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) + 
-      geom_label(data = temp %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
+      geom_label(data = to_show_no_diag %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
                  mapping = aes(label = text), 
                  size = 2.5,
                  label.padding = unit(0.1, "lines")) +
@@ -542,9 +567,9 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
             axis.title.x=element_blank(),
             axis.title.y=element_blank())
     
+    G <- grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(1,4))
   }
   
   return(G)
   
 }
-

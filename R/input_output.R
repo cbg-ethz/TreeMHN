@@ -161,7 +161,6 @@ tree_df_to_trees <- function(n, tree_df) {
 
 ##' tree_df_to_trees(one_tree_df)
 ##' A helper function that sorts the parent IDs and the node IDs such that they are in ascending order
-##' @param n Number of mutational events
 ##' @param one_tree_df A tree data frame for a single patient/tumor
 ##' @return A sorted tree data frame
 sort_one_tree_df <- function(one_tree_df) {

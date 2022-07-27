@@ -7,6 +7,7 @@
 ##' meaning that one mutation is inhibiting another mutation (Default: 0.9)
 ##' @return An n-by-n matrix representing the MHN
 ##' @author Rudolf Schill, Xiang Ge Luo
+##' @importFrom stats rgamma runif
 ##' @references Schill et al. (2020). Modelling cancer progression using Mutual Hazard Networks. Bioinformatics, 36(1), 241–249.
 random_Theta <- function(n, sparsity = 0.5, exclusive_ratio = 0.5) {
   Theta  <- matrix(0, nrow=n, ncol=n)
@@ -112,6 +113,7 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
 
 
 ##' @import dplyr
+##' @importFrom stats rexp
 generate_tree_MHN <- function(n, Theta, lambda_s) {
   
   # sampling time
@@ -186,7 +188,7 @@ perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 
   for (i in c(1:length(unique_tree_IDs))) {
 
-    one_tree_df <- TreeMHN:::sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
+    one_tree_df <- sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
     new_tree_df <- rbind(new_tree_df, perturb_tree(n, one_tree_df, epsilon))
 
   }
@@ -195,6 +197,7 @@ perturb_trees <- function(n, tree_df, epsilon = 0.05) {
 
 }
 
+##' @importFrom stats runif
 perturb_tree <- function(n, one_tree_df, epsilon = 0.05) {
 
   nr_nodes <- nrow(one_tree_df)
