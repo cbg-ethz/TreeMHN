@@ -8,7 +8,6 @@ require(Matrix)
 ##' @param trees Mutation tree structures
 ##' @param lambda_s Rate of the sampling event
 ##' @return An n-by-n matrix representing the initialized MHN
-##' @importFrom stats runif
 initialize_Theta <- function(n, N, trees, lambda_s) {
   initial_Theta <- matrix(0,nrow = n, ncol = n)
 
@@ -59,7 +58,6 @@ initialize_Theta <- function(n, N, trees, lambda_s) {
 ##' @param increment_M_bound The upper bound on the number of Monte Carlo samples (Default: 500).
 ##' @return A Mutual Hazard Network Theta
 ##' @author Xiang Ge Luo
-##' @importFrom stats optim
 ##' @export
 learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
                       M = 100, iterations = 500, to_mask = integer(0),

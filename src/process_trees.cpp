@@ -113,21 +113,19 @@ void get_augmented_tree(std::vector<int> mut_indices, List &tree,
       auto to_remove = std::find(nodes_to_add.begin(), nodes_to_add.end(), nodes.at(current_pos));
       if (to_remove != nodes_to_add.end()) {
         nodes_to_add.erase(to_remove);
+      } else {
+        Rcout << nodes.at(current_pos) << " is not found in:" << "\n";
+        std::cout << "nodes to add = { ";
+        for (int n : nodes_to_add) {
+          std::cout << n << ", ";
+        }
+        std::cout << "}; \n";
+        std::cout << "pathway = { ";
+        for (int n : pathway) {
+          std::cout << n << ", ";
+        }
+        std::cout << "}; \n";
       }
-      
-      // else {
-      //   Rcout << nodes.at(current_pos) << " is not found in:" << "\n";
-      //   std::cout << "nodes to add = { ";
-      //   for (int n : nodes_to_add) {
-      //     std::cout << n << ", ";
-      //   }
-      //   std::cout << "}; \n";
-      //   std::cout << "pathway = { ";
-      //   for (int n : pathway) {
-      //     std::cout << n << ", ";
-      //   }
-      //   std::cout << "}; \n";
-      // }
     }
     
     for (int i {0}; i < ch_set_size; ++i) {

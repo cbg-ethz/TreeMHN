@@ -65,24 +65,21 @@ input_tree_df <- function(n, tree_df, patients = NULL, tree_labels = NULL,
   # Check tree weights
   if (is.null(weights)) {
     weights <- tree_df %>% 
-      select("Patient_ID", "Tree_ID") %>% 
-      distinct("Tree_ID", .keep_all = TRUE) %>% 
-      group_by("Patient_ID") %>%
+      select(Patient_ID, Tree_ID) %>% 
+      distinct(Tree_ID, .keep_all = TRUE) %>% 
+      group_by(Patient_ID) %>%
       mutate(temp = n()) %>%
       mutate(weights = 1 / temp) %>%
-      ungroup("Patient_ID")
-    
-    weights <- weights$weights
-    
+      ungroup(Patient_ID) %>% 
+      .$weights
   } else {
     patient_level_weights <- tree_df %>% 
-      select("Patient_ID", "Tree_ID") %>% 
-      distinct("Tree_ID", .keep_all = TRUE) %>%
-      mutate(tree_weight = weights["Tree_ID"]) %>% 
-      group_by("Patient_ID") %>%
-      summarise(tree_weight = sum(tree_weight))
-    
-    patient_level_weights <- patient_level_weights$tree_weight
+      select(Patient_ID, Tree_ID) %>% 
+      distinct(Tree_ID, .keep_all = TRUE) %>%
+      mutate(tree_weight = weights[Tree_ID]) %>% 
+      group_by(Patient_ID) %>%
+      summarise(tree_weight = sum(tree_weight)) %>%
+      .$tree_weight
     
     idx <- which(patient_level_weights != 1)
     if (length(idx) != 0) {
@@ -164,6 +161,7 @@ tree_df_to_trees <- function(n, tree_df) {
 
 ##' tree_df_to_trees(one_tree_df)
 ##' A helper function that sorts the parent IDs and the node IDs such that they are in ascending order
+##' @param n Number of mutational events
 ##' @param one_tree_df A tree data frame for a single patient/tumor
 ##' @return A sorted tree data frame
 sort_one_tree_df <- function(one_tree_df) {
