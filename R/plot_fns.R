@@ -512,46 +512,26 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
       to_show <- sapply(c(1:n), function (i) any(Theta[i,-i] != 0) || any(Theta[-i,i] != 0))
       to_show_mat <- Theta[to_show, to_show]
       dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
-      to_show_diag <- matrix(diag(Theta)[to_show], ncol = 1)
-      rownames(to_show_diag) <- mutations[to_show]
-      colnames(to_show_diag) <- c("temp")
-      diag(to_show_mat) <- 0
       
       if (sort_diag) {
-        to_show_idx <- order(to_show_diag, decreasing = TRUE)
-        to_show_diag <- as.matrix(to_show_diag[to_show_idx,])
-        
-        to_show_no_diag <- melt(to_show_mat[to_show_idx, to_show_idx])
+        to_show_idx <- order(diag(to_show_mat), decreasing = TRUE)
+        diag(to_show_mat) <- 0
+        temp <- melt(to_show_mat[to_show_idx, to_show_idx])
       } else {
         diag(to_show_mat) <- 0
-        to_show_no_diag <- melt(to_show_mat)
+        temp <- melt(to_show_mat)
       }
       
     } else {
       to_show_mat <- Theta[to_show, to_show]
       dimnames(to_show_mat) <- list(mutations[to_show], mutations[to_show])
-      to_show_diag <- matrix(diag(Theta)[to_show], ncol = 1)
-      rownames(to_show_diag) <- mutations[to_show]
-      colnames(to_show_diag) <- c("temp")
       diag(to_show_mat) <- 0
-      to_show_no_diag <- melt(to_show_mat)
+      temp <- melt(to_show_mat)
     }
     
-    g1 <- melt(to_show_diag) %>%
-      ggplot(aes(x = Var2, y = Var1)) + 
-      geom_raster(aes(fill=value)) +
-      scale_fill_gradient(low = "white", high = colors()[77], 
-                          labels = function(x) sprintf("%.1f", round(x, 1))) +
-      scale_y_discrete(limits=rev) +
-      theme(axis.text.x=element_blank(),
-            axis.ticks=element_blank(),
-            legend.title = element_blank(),
-            axis.title.x=element_blank(),
-            axis.title.y=element_blank())
-    
-    g2 <- ggplot(to_show_no_diag, aes(x = Var2, y = Var1)) + 
+    G <- ggplot(temp, aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) + 
-      geom_label(data = to_show_no_diag %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
+      geom_label(data = temp %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
                  mapping = aes(label = text), 
                  size = 2.5,
                  label.padding = unit(0.1, "lines")) +
@@ -564,7 +544,6 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
             axis.title.x=element_blank(),
             axis.title.y=element_blank())
     
-    G <- grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(1,4))
   }
   
   return(G)
