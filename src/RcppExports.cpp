@@ -39,8 +39,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_timed_trees
-void update_timed_trees(const int& n, const int& N, List& timed_trees, const arma::mat& Theta, const double& lambda_s, const int& M, const List& comp_geno_vec, const List& node_labels_vec, const int& nr_exact);
-RcppExport SEXP _TreeMHN_update_timed_trees(SEXP nSEXP, SEXP NSEXP, SEXP timed_treesSEXP, SEXP ThetaSEXP, SEXP lambda_sSEXP, SEXP MSEXP, SEXP comp_geno_vecSEXP, SEXP node_labels_vecSEXP, SEXP nr_exactSEXP) {
+void update_timed_trees(const int& n, const int& N, List& timed_trees, const arma::mat& Theta, const double& lambda_s, const int& M, NumericVector& log_prob_vec, const List& comp_geno_vec, const List& node_labels_vec, const int& nr_exact);
+RcppExport SEXP _TreeMHN_update_timed_trees(SEXP nSEXP, SEXP NSEXP, SEXP timed_treesSEXP, SEXP ThetaSEXP, SEXP lambda_sSEXP, SEXP MSEXP, SEXP log_prob_vecSEXP, SEXP comp_geno_vecSEXP, SEXP node_labels_vecSEXP, SEXP nr_exactSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
@@ -49,10 +49,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type Theta(ThetaSEXP);
     Rcpp::traits::input_parameter< const double& >::type lambda_s(lambda_sSEXP);
     Rcpp::traits::input_parameter< const int& >::type M(MSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type log_prob_vec(log_prob_vecSEXP);
     Rcpp::traits::input_parameter< const List& >::type comp_geno_vec(comp_geno_vecSEXP);
     Rcpp::traits::input_parameter< const List& >::type node_labels_vec(node_labels_vecSEXP);
     Rcpp::traits::input_parameter< const int& >::type nr_exact(nr_exactSEXP);
-    update_timed_trees(n, N, timed_trees, Theta, lambda_s, M, comp_geno_vec, node_labels_vec, nr_exact);
+    update_timed_trees(n, N, timed_trees, Theta, lambda_s, M, log_prob_vec, comp_geno_vec, node_labels_vec, nr_exact);
     return R_NilValue;
 END_RCPP
 }
@@ -172,7 +173,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_TreeMHN_build_tr_mat", (DL_FUNC) &_TreeMHN_build_tr_mat, 5},
     {"_TreeMHN_compute_obs_ll", (DL_FUNC) &_TreeMHN_compute_obs_ll, 2},
-    {"_TreeMHN_update_timed_trees", (DL_FUNC) &_TreeMHN_update_timed_trees, 9},
+    {"_TreeMHN_update_timed_trees", (DL_FUNC) &_TreeMHN_update_timed_trees, 10},
     {"_TreeMHN_full_MHN_objective", (DL_FUNC) &_TreeMHN_full_MHN_objective, 10},
     {"_TreeMHN_full_MHN_grad", (DL_FUNC) &_TreeMHN_full_MHN_grad, 10},
     {"_TreeMHN_obs_MHN_objective", (DL_FUNC) &_TreeMHN_obs_MHN_objective, 14},

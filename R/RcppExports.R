@@ -9,8 +9,8 @@ compute_obs_ll <- function(tr_mat, lambda_s) {
     .Call(`_TreeMHN_compute_obs_ll`, tr_mat, lambda_s)
 }
 
-update_timed_trees <- function(n, N, timed_trees, Theta, lambda_s, M, comp_geno_vec, node_labels_vec, nr_exact) {
-    invisible(.Call(`_TreeMHN_update_timed_trees`, n, N, timed_trees, Theta, lambda_s, M, comp_geno_vec, node_labels_vec, nr_exact))
+update_timed_trees <- function(n, N, timed_trees, Theta, lambda_s, M, log_prob_vec, comp_geno_vec, node_labels_vec, nr_exact) {
+    invisible(.Call(`_TreeMHN_update_timed_trees`, n, N, timed_trees, Theta, lambda_s, M, log_prob_vec, comp_geno_vec, node_labels_vec, nr_exact))
 }
 
 full_MHN_objective <- function(Theta, trees, gamma, n, N, lambda_s, to_mask, weights, N_patients, smallest_tree_size = 1) {

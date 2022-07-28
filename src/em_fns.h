@@ -29,18 +29,19 @@ void tree_E_step_(const arma::mat &Theta, NumericVector &time_diffs,
                   std::vector<int> pathway = {}, int current_pos = 0);
 NumericVector tree_E_step(const arma::mat &Theta, const int &n, const double &lambda_s,
                           const IntegerVector &nodes, const List &children, const LogicalVector &in_tree,
-                          const IntegerMatrix &genotypes, const List &node_labels);
+                          double &obs_ll, const IntegerMatrix &genotypes, const List &node_labels);
 double tree_imp_samp_once(const arma::mat &Theta, const IntegerVector &nodes,
                           const List &children, const LogicalVector &in_tree,
                           int n, NumericVector &time_diffs, const double &t_s,
                           IntegerVector pathway = {}, int current_pos = 0, double t_pa = 0);
 NumericVector tree_importance_sampling(const arma::mat &Theta, const IntegerVector &nodes,
                                        const List &children, const LogicalVector &in_tree,
-                                       const int &n, const int &M, const double &lambda_s);
+                                       const int &n, const int &M, const double &lambda_s,
+                                       double &obs_ll);
 void update_timed_trees(const int &n, const int &N, List &timed_trees, 
                         const arma::mat &Theta, const double &lambda_s, const int &M,
-                        const List &comp_geno_vec, const List &node_labels_vec,
-                        const int &nr_exact);
+                        NumericVector &log_prob_vec, const List &comp_geno_vec, 
+                        const List &node_labels_vec, const int &nr_exact);
 
 
 #endif //EM_FUNCTIONS_H

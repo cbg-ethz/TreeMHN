@@ -128,7 +128,7 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
         # E-step
         cat("E-step...\n")
         start_time <- Sys.time()
-        update_timed_trees(n, N, timed_trees, Theta, lambda_s, M,
+        update_timed_trees(n, N, timed_trees, Theta, lambda_s, M, log_prob_vec,
                            comp_geno_vec, node_labels_vec, nr_exact)
         print(Sys.time() - start_time)
         
@@ -159,7 +159,7 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
       while ((round < iterations) && (reltol > 1e-6)) {
         
         # E-step
-        update_timed_trees(n, N, timed_trees, Theta, lambda_s, M,
+        update_timed_trees(n, N, timed_trees, Theta, lambda_s, M, log_prob_vec,
                            comp_geno_vec, node_labels_vec, nr_exact)
         
         # M-step

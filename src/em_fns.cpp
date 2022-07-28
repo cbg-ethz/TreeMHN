@@ -284,11 +284,11 @@ void tree_E_step_(const arma::mat &Theta, NumericVector &time_diffs,
 
 NumericVector tree_E_step(const arma::mat &Theta, const int &n, const double &lambda_s,
                           const IntegerVector &nodes, const List &children, const LogicalVector &in_tree,
-                          const IntegerMatrix &genotypes, const List &node_labels) {
+                          double &obs_ll, const IntegerMatrix &genotypes, const List &node_labels) {
 
   arma::sp_mat tr_mat = build_tr_mat(n, Theta, genotypes, node_labels, lambda_s);
   NumericVector time_diffs(nodes.length());
-  double obs_ll = compute_obs_ll(tr_mat, lambda_s);
+  obs_ll = compute_obs_ll(tr_mat, lambda_s);
   tree_E_step_(Theta, time_diffs, exp(obs_ll), n,
                nodes, children, in_tree, tr_mat,
                lambda_s, genotypes, node_labels);
@@ -361,7 +361,8 @@ double tree_imp_samp_once(const arma::mat &Theta, const IntegerVector &nodes,
 
 NumericVector tree_importance_sampling(const arma::mat &Theta, const IntegerVector &nodes,
                                        const List &children, const LogicalVector &in_tree,
-                                       const int &n, const int &M, const double &lambda_s) {
+                                       const int &n, const int &M, const double &lambda_s,
+                                       double &obs_ll) {
 
   NumericVector expected_time_diffs(nodes.length());
   double importance_weight_sum {0};
@@ -379,6 +380,7 @@ NumericVector tree_importance_sampling(const arma::mat &Theta, const IntegerVect
   }
 
   expected_time_diffs = expected_time_diffs / (importance_weight_sum);
+  obs_ll = log(importance_weight_sum) - log(M);
 
   return expected_time_diffs;
 }
@@ -387,15 +389,15 @@ NumericVector tree_importance_sampling(const arma::mat &Theta, const IntegerVect
 // [[Rcpp::export]]
 void update_timed_trees(const int &n, const int &N, List &timed_trees, 
                         const arma::mat &Theta, const double &lambda_s, const int &M,
-                        const List &comp_geno_vec, const List &node_labels_vec,
-                        const int &nr_exact) {
+                        NumericVector &log_prob_vec, const List &comp_geno_vec, 
+                        const List &node_labels_vec, const int &nr_exact) {
   
   // Loop through all trees using exact inference
   for (int i {0}; i < nr_exact; ++i) {
     
     List tree = timed_trees.at(i);
     tree["time_diffs"] = tree_E_step(Theta, n, lambda_s, tree["nodes"], tree["children"], 
-                           tree["in_tree"], comp_geno_vec.at(i), node_labels_vec.at(i));
+                           tree["in_tree"], log_prob_vec.at(i), comp_geno_vec.at(i), node_labels_vec.at(i));
     timed_trees.at(i) = tree;
     
   }
@@ -404,7 +406,8 @@ void update_timed_trees(const int &n, const int &N, List &timed_trees,
   for (int i {nr_exact}; i < N; ++i) {
     
     List tree = timed_trees.at(i);
-    tree["time_diffs"] = tree_importance_sampling(Theta, tree["nodes"], tree["children"], tree["in_tree"], n, M, lambda_s);
+    tree["time_diffs"] = tree_importance_sampling(Theta, tree["nodes"], tree["children"], 
+                                        tree["in_tree"], n, M, lambda_s, log_prob_vec.at(i));
     timed_trees.at(i) = tree;
     
   }
