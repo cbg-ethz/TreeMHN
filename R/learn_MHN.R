@@ -57,6 +57,8 @@ initialize_Theta <- function(n, N, trees, lambda_s) {
 ##' above which Monte Carlo sampling will be used (Default: 500). 
 ##' @param increment_M The step size to increment the number of Monte Carlo samples (Default: 0).
 ##' @param increment_M_bound The upper bound on the number of Monte Carlo samples (Default: 500).
+##' @param A boolean value to determine whether the function returns only the estimated
+##' Theta or the TreeMHN object containing the estimated Theta and other parameters (Default: TRUE).
 ##' @return A Mutual Hazard Network Theta
 ##' @author Xiang Ge Luo
 ##' @importFrom stats optim
@@ -64,7 +66,7 @@ initialize_Theta <- function(n, N, trees, lambda_s) {
 learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
                       M = 100, iterations = 500, to_mask = integer(0),
                       use_EM = FALSE, verbose = FALSE, MC_threshold = 500,
-                      increment_M = 0, increment_M_bound = 500) {
+                      increment_M = 0, increment_M_bound = 500, return_Theta_only = TRUE) {
 
   n <- tree_obj$n
   N <- tree_obj$N
@@ -113,6 +115,8 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
     rm(tree)
     rm(trees)
     rm(MC_flags)
+    
+    log_prob_vec <- rep(0, N) # initializing log-likelihood vector
     
     if (verbose) {
       
@@ -210,7 +214,14 @@ learn_MHN <- function(tree_obj, gamma = 0.5, lambda_s = 1, Theta_init = NULL,
     Theta[to_mask] <- 0
   }
 
-  return(Theta)
+  if (return_Theta_only) {
+    return(Theta)
+  } else {
+    tree_obj$Theta <- Theta
+    tree_obj$log_prob_vec <- log_prob_vec
+    return(tree_obj)
+  }
+  
 
 }
 
