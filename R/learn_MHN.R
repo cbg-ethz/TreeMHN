@@ -57,7 +57,7 @@ initialize_Theta <- function(n, N, trees, lambda_s) {
 ##' above which Monte Carlo sampling will be used (Default: 500). 
 ##' @param increment_M The step size to increment the number of Monte Carlo samples (Default: 0).
 ##' @param increment_M_bound The upper bound on the number of Monte Carlo samples (Default: 500).
-##' @param A boolean value to determine whether the function returns only the estimated
+##' @param return_Theta_only A boolean value to determine whether the function returns only the estimated
 ##' Theta or the TreeMHN object containing the estimated Theta and other parameters (Default: TRUE).
 ##' @return A Mutual Hazard Network Theta
 ##' @author Xiang Ge Luo
