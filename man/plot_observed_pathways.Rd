@@ -10,7 +10,8 @@ plot_observed_pathways(
   top_M = 10,
   lambda_s = 1,
   mutation_colors = NULL,
-  prob_digits = 2
+  prob_digits = 2,
+  at_least_twice = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,10 @@ plot_observed_pathways(
 \item{mutation_colors}{A named vector with the color codes for all mutations (Default: NULL)}
 
 \item{prob_digits}{Number of digits to show for the probabilities (Default: 2)}
+
+\item{at_least_twice}{A boolean flag indicating whether only trajectories that
+appear at least twice in the dataset are shown (Default: TRUE). If true, this flag
+will overwrite the top_M argument.}
 }
 \description{
 This function takes a cohort of mutation trees and the estimated

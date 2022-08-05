@@ -273,14 +273,27 @@ plot_next_mutations <- function(n, tree_df, Theta,
 ##' @param lambda_s Sampling rate (Default: 1)
 ##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
+##' @param full A boolean flag indicating whether the full MHN is used.
+##' If false, then only mutations with non-zero off-diagonal entries will be used (default: FALSE).
 ##' @author Xiang Ge Luo
 ##' @import ggplot2
 ##' @importFrom stats rnorm
 ##' @export
-plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, mutation_colors = NULL, prob_digits = 2) {
+plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1, 
+                                     mutation_colors = NULL, prob_digits = 2, full = FALSE) {
   
-  n <- nrow(Theta)
-  pathway_df <- Theta_to_pathways_w_sampling(Theta, top_M, lambda_s)
+  if (full) {
+    to_use_mat <- Theta
+  } else {
+    to_use <- sapply(c(1:nrow(Theta)), function (i) any(Theta[i,-i] != 0) || any(Theta[-i,i] != 0))
+    to_use_mat <- Theta[to_use, to_use]
+    mutations <- mutations[to_use]
+    mutation_colors <- mutation_colors[to_use]
+  }
+  
+  n <- nrow(to_use_mat)
+  
+  pathway_df <- Theta_to_pathways_w_sampling(to_use_mat, top_M, lambda_s)
   pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.0001) # Avoid overlapping labels
   
   waiting_time <- c()
@@ -299,7 +312,7 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
     for (j in c(1:length(p))) {
       pp <- p[c(1:j)]
       denom_set <- get_children(n, pp[-length(pp)])
-      denom <- lambda_s + sum(sapply(denom_set, function (l) get_lambda(l, Theta)))
+      denom <- lambda_s + sum(sapply(denom_set, function (l) get_lambda(l, to_use_mat)))
       time_diff <- 1 / denom
       if (j == 1) {
         times[j] <- time_diff
@@ -357,16 +370,27 @@ plot_pathways_w_sampling <- function(Theta, mutations, top_M = 10, lambda_s = 1,
 ##' @param lambda_s Sampling rate (Default: 1)
 ##' @param mutation_colors A named vector with the color codes for all mutations (Default: NULL)
 ##' @param prob_digits Number of digits to show for the probabilities (Default: 2)
+##' @param at_least_twice A boolean flag indicating whether only trajectories that
+##' appear at least twice in the dataset are shown (Default: TRUE). If true, this flag
+##' will overwrite the top_M argument.
 ##' @author Xiang Ge Luo
 ##' @importFrom stats rnorm
+##' @import dplyr
 ##' @export
-plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, mutation_colors = NULL, prob_digits = 2) {
+plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1, 
+                                   mutation_colors = NULL, prob_digits = 2, at_least_twice = TRUE) {
   
   n <- nrow(Theta)
   mutations <- tree_obj$mutations
-  
   pathway_df <- get_observed_pathways(tree_obj)
-  pathway_df <- pathway_df[c(1:top_M),]
+  
+  if (at_least_twice) {
+    pathway_df <- pathway_df %>% filter(count >= 2)
+    top_M <- nrow(pathway_df)
+  } else {
+    pathway_df <- pathway_df[c(1:top_M),]
+  }
+  
   pathway_df$probs <- pathway_df$probs*100 + rnorm(top_M, sd = 0.0001) # Avoid overlapping labels
   
   waiting_time <- c()

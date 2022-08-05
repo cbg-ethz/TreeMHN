@@ -10,7 +10,8 @@ plot_pathways_w_sampling(
   top_M = 10,
   lambda_s = 1,
   mutation_colors = NULL,
-  prob_digits = 2
+  prob_digits = 2,
+  full = FALSE
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ If no names are given, then the mutation IDs will be used.}
 \item{mutation_colors}{A named vector with the color codes for all mutations (Default: NULL)}
 
 \item{prob_digits}{Number of digits to show for the probabilities (Default: 2)}
+
+\item{full}{A boolean flag indicating whether the full MHN is used.
+If false, then only mutations with non-zero off-diagonal entries will be used (default: FALSE).}
 }
 \description{
 This function takes a Mutual Hazard Network as input and plot the most probable
