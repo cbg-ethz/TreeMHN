@@ -17,8 +17,8 @@ library(ggpubr)
 ## 2.1 Generate trees
 
 The function `generate_trees` can generate a random Mutual Hazard
-Network *Θ* and a set of mutation trees from *Θ* according to the tree
-generating process introduced in the paper.
+Network \(\Theta\) and a set of mutation trees from \(\Theta\) according
+to the tree generating process introduced in the paper.
 
 ``` r
 set.seed(6666)
@@ -43,14 +43,16 @@ tree <- trees[[66]]
 plot_tree_list(tree, tree_obj$mutations)
 ```
 
-<div id="htmlwidget-d684903e5584a4f325ca" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-d684903e5584a4f325ca">{"x":{"diagram":"\n  digraph g {\n  labelloc=\"t\";\n  fontname=\"Arial\";\n  fontsize=28;\n   label = \"Tree 66 \"; 1 [label = \" Root \", fontname=\"Arial\"]; 2 [label = \" 1 \", fontname=\"Arial\"]; 3 [label = \" 9 \", fontname=\"Arial\"]; 4 [label = \" 7 \", fontname=\"Arial\"]; 1 -> 2 ; 1 -> 3 ; 3 -> 4 ; }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+![](Demo_files/figure-gfm/display_one_tree-1.png)<!-- -->
 
 ## 2.2 Learn MHN from the generated trees
 
-The function `learn_MHN` takes a `TreeMHN` object and learns an MHN *Θ̂*.
+The function `learn_MHN` takes a `TreeMHN` object and learns an MHN
+\(\hat{\Theta}\).
 
--   Without stability selection:
+  - Without stability selection:
+
+<!-- end list -->
 
 ``` r
 pred_Theta <- learn_MHN(tree_obj, gamma = gamma, lambda_s = lambda_s, verbose = TRUE)
@@ -67,8 +69,10 @@ pred_Theta <- learn_MHN(tree_obj, gamma = gamma, lambda_s = lambda_s, verbose = 
     ## final  value 3514.281048 
     ## converged
 
--   With stability selection ([Meinshausen and Bühlmann
+  - With stability selection ([Meinshausen and Bühlmann
     (2010)](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-9868.2010.00740.x)):
+
+<!-- end list -->
 
 ``` r
 # Function to subsample half of the trees and learn one MHN
@@ -108,9 +112,9 @@ pred_Theta_w_SS <- learn_MHN(tree_obj, gamma = gamma, to_mask = TreeMHN_to_mask)
 
 We first plot the true MHN and the two estimated MHNs by ordering the
 entries based on the true baseline rates. At a regularization level
-*γ* = 0.5, most entries at the top left corner are recovered. Without
-stability selection, there are many false non-zero entries due to
-overfitting, including some very small values at the top left corner.
+\(\gamma = 0.5\), most entries at the top left corner are recovered.
+Without stability selection, there are many false non-zero entries due
+to overfitting, including some very small values at the top left corner.
 With stability selection, we see that those entries are removed, along
 with some true positive entries at the lower left corner.
 
@@ -125,13 +129,15 @@ We can compute the precision and recall (= true positive rate) based on
 the off-diagonal differences using function `compare_Theta`. (See the
 Supplementary Material for more details.)
 
-| *Θ* (left) *Θ̂* (top) | *i*  *j* | *i* → *j* | *i* ⊣ *j* |
-|----------------------|----------|-----------|-----------|
-| *i*  *j*             | TN       | FP        | FP        |
-| *i* → *j*            | FN       | TP        | FP        |
-| *i* ⊣ *j*            | FN       | FP        | TP        |
+| \(\Theta\) (left) \(\hat{\Theta}\) (top) | \(i \quad j\) | \(i \rightarrow j\) | \(i \dashv j\) |
+| ---------------------------------------- | ------------- | ------------------- | -------------- |
+| \(i \quad j\)                            | TN            | FP                  | FP             |
+| \(i \rightarrow j\)                      | FN            | TP                  | FP             |
+| \(i \dashv j\)                           | FN            | FP                  | TP             |
 
--   Without stability selection:
+  - Without stability selection:
+
+<!-- end list -->
 
 ``` r
 compare_Theta(true_Theta, pred_Theta)
@@ -142,7 +148,9 @@ compare_Theta(true_Theta, pred_Theta)
     ##     FPR_P       MSE 
     ##      0.51      0.77
 
--   With stability selection:
+  - With stability selection:
+
+<!-- end list -->
 
 ``` r
 compare_Theta(true_Theta, pred_Theta_w_SS)
@@ -156,7 +164,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
 
--   Without stability selection:
+  - Without stability selection:
+
+<!-- end list -->
 
 ``` r
 compare_Theta(true_Theta[top_idx,top_idx], pred_Theta[top_idx,top_idx])
@@ -167,7 +177,9 @@ compare_Theta(true_Theta[top_idx,top_idx], pred_Theta[top_idx,top_idx])
     ##     FPR_P       MSE 
     ##      0.70      0.11
 
--   With stability selection:
+  - With stability selection:
+
+<!-- end list -->
 
 ``` r
 compare_Theta(true_Theta[top_idx,top_idx], pred_Theta_w_SS[top_idx,top_idx])
@@ -192,24 +204,23 @@ plot_tree_df(AML$tree_df[AML$tree_df$Tree_ID == match("AML-38_AML-38-001", AML$t
              AML$mutations, "AML-38_AML-38-001")
 ```
 
-<div id="htmlwidget-c1398cf586e172b58f6b" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-c1398cf586e172b58f6b">{"x":{"diagram":"\n  digraph g {\n  labelloc=\"t\";\n  fontname=\"Arial\";\n  fontsize=28;\n   label = \" AML-38_AML-38-001 \"; 1 [label = \" Root \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 2 [label = \" NPM1 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 3 [label = \" IDH1 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 4 [label = \" IDH2 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 5 [label = \" FLT3 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 6 [label = \" KRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 7 [label = \" PTPN11 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 8 [label = \" FLT3 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 9 [label = \" KRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 10 [label = \" NRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 11 [label = \" PTPN11 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 1 -> 2 ; 2 -> 3 ; 2 -> 4 ; 3 -> 5 ; 3 -> 6 ; 3 -> 7 ; 4 -> 8 ; 4 -> 9 ; 4 -> 10 ; 4 -> 11 ; }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+![](Demo_files/figure-gfm/read_AML-1.png)<!-- -->
 
 To use another dataset, please make sure it is in dataframe format with
 five columns:
 
--   `Patient_ID`: IDs of patients, unique for each patient;
+  - `Patient_ID`: IDs of patients, unique for each patient;
 
--   `Tree_ID`: IDs of mutation trees, unique within each patient;
+  - `Tree_ID`: IDs of mutation trees, unique within each patient;
 
--   `Node_ID`: IDs of each node in the tree, including the root node
+  - `Node_ID`: IDs of each node in the tree, including the root node
     (with ID “1”), unique for each node;
 
--   `Mutation_ID`: IDs of each mutational event. The root node has a
+  - `Mutation_ID`: IDs of each mutational event. The root node has a
     mutation ID of “0”, and other mutation IDs can be duplicated in the
     tree to allow for parallel mutations;
 
--   `Parent_ID`: IDs of the parent node ID. The root node has itself as
+  - `Parent_ID`: IDs of the parent node ID. The root node has itself as
     parent (ID “1”).
 
 For example,
@@ -236,10 +247,10 @@ function. For example,
 
 ## 3.2 Learn the MHN
 
-To ensure enough precision, we run stability selection with *γ* = 0.1
-and a threshold of 95% and obtain a vector of non-selected elements over
-1000 subsamples. Again, we recommend to run the code using the
-`parallel` package on a cluster.
+To ensure enough precision, we run stability selection with
+\(\gamma = 0.1\) and a threshold of \(95\%\) and obtain a vector of
+non-selected elements over \(1000\) subsamples. Again, we recommend to
+run the code using the `parallel` package on a cluster.
 
 ``` r
 RNGkind("L'Ecuyer-CMRG")
@@ -353,5 +364,4 @@ plot_next_mutations(AML$n,
     ## Probability: 2.386 %
     ## Log ratio model vs random: 1.018
 
-<div id="htmlwidget-5a5e1a804f4fc7ec7cf2" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-5a5e1a804f4fc7ec7cf2">{"x":{"diagram":"\n  digraph g {\n  labelloc=\"t\";\n  fontname=\"Arial\";\n  fontsize=28;\n   label = \" AML-09_AML-09-001 \"; 1 [label = \" Root \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 2 [label = \" NPM1 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 3 [label = \" FLT3 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 4 [label = \" KRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 5 [label = \" NRAS \n 16.461 % \", fontname=\"Arial\", style=filled, color= thistle ]; 6 [label = \" PTPN11 \n 10.353 % \", fontname=\"Arial\", style=filled, color= thistle ]; 7 [label = \" PTPN11 \n 10.353 % \", fontname=\"Arial\", style=filled, color= thistle ]; 8 [label = \" FLT3 \n 9.202 % \", fontname=\"Arial\", style=filled, color= thistle ]; 9 [label = \" NRAS \n 8.693 % \", fontname=\"Arial\", style=filled, color= thistle ]; 10 [label = \" WT1 \n 7.185 % \", fontname=\"Arial\", style=filled, color= thistle ]; 11 [label = \" KRAS \n 5.511 % \", fontname=\"Arial\", style=filled, color= thistle ]; 12 [label = \" DNMT3A \n 2.386 % \", fontname=\"Arial\", style=filled, color= thistle ]; 1 -> 2 ; 2 -> 3 ; 2 -> 4 ; 4 -> 5 ; 2 -> 6 ; 4 -> 7 ; 4 -> 8 ; 2 -> 9 ; 3 -> 10 ; 3 -> 11 ; 1 -> 12 ; }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+![](Demo_files/figure-gfm/next_mutations-1.png)<!-- -->
