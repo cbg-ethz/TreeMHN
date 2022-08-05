@@ -9,6 +9,7 @@ co-occurrence from tumor mutation trees”.
 library(TreeMHN)
 library(parallel)
 library(ggplot2)
+library(ggpubr)
 ```
 
 # 2 Simulated data
@@ -42,7 +43,8 @@ tree <- trees[[66]]
 plot_tree_list(tree, tree_obj$mutations)
 ```
 
-![](Demo_files/figure-gfm/display_one_tree-1.png)<!-- -->
+<div id="htmlwidget-d684903e5584a4f325ca" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-d684903e5584a4f325ca">{"x":{"diagram":"\n  digraph g {\n  labelloc=\"t\";\n  fontname=\"Arial\";\n  fontsize=28;\n   label = \"Tree 66 \"; 1 [label = \" Root \", fontname=\"Arial\"]; 2 [label = \" 1 \", fontname=\"Arial\"]; 3 [label = \" 9 \", fontname=\"Arial\"]; 4 [label = \" 7 \", fontname=\"Arial\"]; 1 -> 2 ; 1 -> 3 ; 3 -> 4 ; }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 ## 2.2 Learn MHN from the generated trees
 
@@ -65,8 +67,8 @@ pred_Theta <- learn_MHN(tree_obj, gamma = gamma, lambda_s = lambda_s, verbose = 
     ## final  value 3514.281048 
     ## converged
 
--   With stability selection ([Meinshausen and
-    Bühlmann (2010)](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-9868.2010.00740.x)):
+-   With stability selection ([Meinshausen and Bühlmann
+    (2010)](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-9868.2010.00740.x)):
 
 ``` r
 # Function to subsample half of the trees and learn one MHN
@@ -147,9 +149,9 @@ compare_Theta(true_Theta, pred_Theta_w_SS)
 ```
 
     ##       SHD        TP        FP        TN        FN Precision       TPR     FPR_N 
-    ##     29.00     16.00      0.00     45.00     29.00      1.00      0.36      0.00 
+    ##     30.00     16.00      1.00     44.00     29.00      0.94      0.36      0.02 
     ##     FPR_P       MSE 
-    ##      0.00      0.89
+    ##      0.02      0.89
 
 If we focus on the first half of the events with higher baseline rates,
 we can see an increase in recall/TPR.
@@ -190,7 +192,8 @@ plot_tree_df(AML$tree_df[AML$tree_df$Tree_ID == match("AML-38_AML-38-001", AML$t
              AML$mutations, "AML-38_AML-38-001")
 ```
 
-![](Demo_files/figure-gfm/read_AML-1.png)<!-- -->
+<div id="htmlwidget-c1398cf586e172b58f6b" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c1398cf586e172b58f6b">{"x":{"diagram":"\n  digraph g {\n  labelloc=\"t\";\n  fontname=\"Arial\";\n  fontsize=28;\n   label = \" AML-38_AML-38-001 \"; 1 [label = \" Root \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 2 [label = \" NPM1 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 3 [label = \" IDH1 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 4 [label = \" IDH2 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 5 [label = \" FLT3 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 6 [label = \" KRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 7 [label = \" PTPN11 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 8 [label = \" FLT3 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 9 [label = \" KRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 10 [label = \" NRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 11 [label = \" PTPN11 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 1 -> 2 ; 2 -> 3 ; 2 -> 4 ; 3 -> 5 ; 3 -> 6 ; 3 -> 7 ; 4 -> 8 ; 4 -> 9 ; 4 -> 10 ; 4 -> 11 ; }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 To use another dataset, please make sure it is in dataframe format with
 five columns:
@@ -284,11 +287,28 @@ plot_Theta(AML_Theta, AML$mutations, full = FALSE)
 
 ![](Demo_files/figure-gfm/plot_AML_Theta-1.png)<!-- -->
 
-Given the estimated MHN, we can plot the most probable evolutionary
-trajectories of a given length using the `plot_pathways` function:
+    ## TableGrob (1 x 2) "arrange": 2 grobs
+    ##   z     cells    name           grob
+    ## 1 1 (1-1,1-1) arrange gtable[layout]
+    ## 2 2 (1-1,2-2) arrange gtable[layout]
+
+The `plot_observed_pathways` function plots the observed trajectories
+sorted according to their relative frequencies. Given the estimated MHN,
+we can plot the most probable evolutionary trajectories using the
+`plot_pathways_w_sampling` function.
 
 ``` r
-plot_pathways(AML_Theta, mutations = AML$mutations, top_M = 10, n_order = 4)
+mutation_colors <- colors()[c(7, 11, 20, 143, 419,
+                              417, 53, 62, 43, 76,
+                              623, 80, 81, 542, 86,
+                              93, 96, 524, 101, 102,
+                              364, 367, 373, 383, 387,
+                              399, 404, 405, 411, 481, 493)]
+names(mutation_colors) <- AML$mutations
+
+g1 <- plot_observed_pathways(AML, AML_Theta, mutation_colors = mutation_colors)
+g2 <- plot_pathways_w_sampling(AML_Theta, AML$mutations, top_M = 40, mutation_colors = mutation_colors)
+ggarrange(g1, g2)
 ```
 
 ![](Demo_files/figure-gfm/plot_AML_pathways-1.png)<!-- -->
@@ -310,19 +330,28 @@ plot_next_mutations(AML$n,
     ## Top 8 most probable mutational events that will happen next:
     ## The next most probable node: Root->NPM1->KRAS->NRAS 
     ## Probability: 16.461 %
+    ## Log ratio model vs random: 2.949 
     ## The next most probable node: Root->NPM1->PTPN11 
     ## Probability: 10.353 %
+    ## Log ratio model vs random: 2.486 
     ## The next most probable node: Root->NPM1->KRAS->PTPN11 
     ## Probability: 10.353 %
+    ## Log ratio model vs random: 2.486 
     ## The next most probable node: Root->NPM1->KRAS->FLT3 
     ## Probability: 9.202 %
+    ## Log ratio model vs random: 2.368 
     ## The next most probable node: Root->NPM1->NRAS 
     ## Probability: 8.693 %
+    ## Log ratio model vs random: 2.311 
     ## The next most probable node: Root->NPM1->FLT3->WT1 
     ## Probability: 7.185 %
+    ## Log ratio model vs random: 2.12 
     ## The next most probable node: Root->NPM1->FLT3->KRAS 
     ## Probability: 5.511 %
+    ## Log ratio model vs random: 1.855 
     ## The next most probable node: Root->DNMT3A 
     ## Probability: 2.386 %
+    ## Log ratio model vs random: 1.018
 
-![](Demo_files/figure-gfm/next_mutations-1.png)<!-- -->
+<div id="htmlwidget-5a5e1a804f4fc7ec7cf2" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-5a5e1a804f4fc7ec7cf2">{"x":{"diagram":"\n  digraph g {\n  labelloc=\"t\";\n  fontname=\"Arial\";\n  fontsize=28;\n   label = \" AML-09_AML-09-001 \"; 1 [label = \" Root \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 2 [label = \" NPM1 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 3 [label = \" FLT3 \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 4 [label = \" KRAS \", fontname=\"Arial\", style=filled, color= paleturquoise3 ]; 5 [label = \" NRAS \n 16.461 % \", fontname=\"Arial\", style=filled, color= thistle ]; 6 [label = \" PTPN11 \n 10.353 % \", fontname=\"Arial\", style=filled, color= thistle ]; 7 [label = \" PTPN11 \n 10.353 % \", fontname=\"Arial\", style=filled, color= thistle ]; 8 [label = \" FLT3 \n 9.202 % \", fontname=\"Arial\", style=filled, color= thistle ]; 9 [label = \" NRAS \n 8.693 % \", fontname=\"Arial\", style=filled, color= thistle ]; 10 [label = \" WT1 \n 7.185 % \", fontname=\"Arial\", style=filled, color= thistle ]; 11 [label = \" KRAS \n 5.511 % \", fontname=\"Arial\", style=filled, color= thistle ]; 12 [label = \" DNMT3A \n 2.386 % \", fontname=\"Arial\", style=filled, color= thistle ]; 1 -> 2 ; 2 -> 3 ; 2 -> 4 ; 4 -> 5 ; 2 -> 6 ; 4 -> 7 ; 4 -> 8 ; 2 -> 9 ; 3 -> 10 ; 3 -> 11 ; 1 -> 12 ; }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>

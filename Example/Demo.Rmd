@@ -16,6 +16,7 @@ This document demonstrates how to use the `TreeMHN` package. The package is crea
 library(TreeMHN)
 library(parallel)
 library(ggplot2)
+library(ggpubr)
 ```
 
 # 2 Simulated data
@@ -102,13 +103,13 @@ top_idx <- idx[c(1:(n/2))]
 ```
 
 ```{r theta_plots, include=FALSE, eval=TRUE}
-g1 <- ggpubr::annotate_figure(plot_Theta(true_Theta, to_show = idx), top = "True MHN")
-g2 <- ggpubr::annotate_figure(plot_Theta(pred_Theta, to_show = idx), top = "TreeMHN")
-g3 <- ggpubr::annotate_figure(plot_Theta(pred_Theta_w_SS, to_show = idx), top = "TreeMHN with stability selection")
+g1 <- annotate_figure(plot_Theta(true_Theta, to_show = idx), top = "True MHN")
+g2 <- annotate_figure(plot_Theta(pred_Theta, to_show = idx), top = "TreeMHN")
+g3 <- annotate_figure(plot_Theta(pred_Theta_w_SS, to_show = idx), top = "TreeMHN with stability selection")
 ```
 
 ```{r theta_plots2, fig.height=5, fig.width=20, echo=FALSE, eval=TRUE}
-ggpubr::ggarrange(g1, g2, g3, nrow = 1, ncol = 3)
+ggarrange(g1, g2, g3, nrow = 1, ncol = 3)
 ```
 
 
@@ -224,10 +225,20 @@ If we focus on the entries with non-zero off-diagonal entries, we get:
 plot_Theta(AML_Theta, AML$mutations, full = FALSE)
 ```
 
-Given the estimated MHN, we can plot the most probable evolutionary trajectories of a given length using the `plot_pathways` function:
+The `plot_observed_pathways` function plots the observed trajectories sorted according to their relative frequencies. Given the estimated MHN, we can plot the most probable evolutionary trajectories using the `plot_pathways_w_sampling` function.
 
-```{r plot_AML_pathways, fig.height=6, fig.width=17}
-plot_pathways(AML_Theta, mutations = AML$mutations, top_M = 10, n_order = 4)
+```{r plot_AML_pathways, fig.width=17, fig.height=17}
+mutation_colors <- colors()[c(7, 11, 20, 143, 419,
+                              417, 53, 62, 43, 76,
+                              623, 80, 81, 542, 86,
+                              93, 96, 524, 101, 102,
+                              364, 367, 373, 383, 387,
+                              399, 404, 405, 411, 481, 493)]
+names(mutation_colors) <- AML$mutations
+
+g1 <- plot_observed_pathways(AML, AML_Theta, mutation_colors = mutation_colors)
+g2 <- plot_pathways_w_sampling(AML_Theta, AML$mutations, top_M = 40, mutation_colors = mutation_colors)
+ggarrange(g1, g2)
 ```
 
 Given a particular tree and the estimated MHN, we can also find the next most probable mutational events using the `plot_next_mutations` function.
