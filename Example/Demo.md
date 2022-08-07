@@ -199,7 +199,7 @@ al. (2020)](https://www.nature.com/articles/s41467-020-19119-8).
 
 ``` r
 # note that we summarize the mutations at the gene level
-load("AML_tree_obj.RData")
+load("./Data/AML_morita/AML_tree_obj.RData")
 plot_tree_df(AML$tree_df[AML$tree_df$Tree_ID == match("AML-38_AML-38-001", AML$tree_labels),],
              AML$mutations, "AML-38_AML-38-001")
 ```
@@ -270,7 +270,7 @@ AML_Theta <- learn_MHN(AML, gamma = gamma, to_mask = to_mask)
 ```
 
 ``` r
-save(AML_Theta, file = "AML_Theta.RData")
+save(AML_Theta, file = "./Data/AML_morita/AML_Theta.RData")
 ```
 
 ## 3.3 Plot the network
