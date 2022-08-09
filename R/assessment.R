@@ -192,7 +192,7 @@ trees_to_revolver_W <- function(n, tree_df) {
     W[pa + 1, tree_df$Mutation_ID[i] + 1] <- W[pa + 1, tree_df$Mutation_ID[i] + 1] + 1
   }
 
-  # W <- W + 1 # add pseudocounts
+  W <- W + 1 # add pseudocounts
   diag(W) <- 0 # no mutation can be the descendant of itself
   W <- W / rowSums(W) # normalize by rows
   W[is.na(W)] <- 0
