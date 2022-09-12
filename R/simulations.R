@@ -80,13 +80,14 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
   tree_dfs <- list()
   tree_id <- 1
   while (length(tree_dfs) < N) {
-    tree_df <- generate_tree_MHN(n, Theta, lambda_s)
-    tree_size <- nrow(tree_df) - 1
-    if ((tree_size >= smallest_tree_size) & (tree_size <= largest_tree_size)) {
-      tree_df$Patient_ID <- rep(tree_id, nrow(tree_df))
-      tree_df$Tree_ID <- rep(tree_id, nrow(tree_df))
-      tree_dfs <- append(tree_dfs, list(tree_df))
-      tree_id <- tree_id + 1
+    tree_df <- generate_tree_MHN(n, Theta, lambda_s, largest_tree_size)
+    if (!is.null(tree_df)) {
+      if (nrow(tree_df) - 1 >= smallest_tree_size) {
+        tree_df$Patient_ID <- rep(tree_id, nrow(tree_df))
+        tree_df$Tree_ID <- rep(tree_id, nrow(tree_df))
+        tree_dfs <- append(tree_dfs, list(tree_df))
+        tree_id <- tree_id + 1
+      }
     }
   }
   tree_df <- do.call(rbind, tree_dfs) %>% 
@@ -114,7 +115,7 @@ generate_trees <- function(n = 10, N = 100, lambda_s = 1, Theta = NULL,
 
 ##' @import dplyr
 ##' @importFrom stats rexp
-generate_tree_MHN <- function(n, Theta, lambda_s) {
+generate_tree_MHN <- function(n, Theta, lambda_s, largest_tree_size) {
   
   # sampling time
   t_s <- rexp(1, lambda_s) 
@@ -132,6 +133,12 @@ generate_tree_MHN <- function(n, Theta, lambda_s) {
   
   # recursively expand the tree
   while (length(current_nodes) > 0) {
+    
+    # check tree size
+    if (nrow(tree_df) - 1 > largest_tree_size) {
+      tree_df <- NULL
+      break
+    }
     
     # initialize next positions
     next_nodes <- c()
@@ -173,7 +180,9 @@ generate_tree_MHN <- function(n, Theta, lambda_s) {
     
   }
   
-  tree_df <- tree_df %>% select(Node_ID, Mutation_ID, Parent_ID)
+  if (!is.null(tree_df)) {
+    tree_df <- tree_df %>% select(Node_ID, Mutation_ID, Parent_ID)
+  }
   
   return(tree_df)
   
