@@ -19,8 +19,14 @@ subsample_once <- function(subsample_size, tree_obj, gamma) {
   tree_obj$weights <- subsample_weights
   
   pred_Theta <- learn_MHN(tree_obj, gamma)
-  pD <- genotypes_to_pD(subsample_trees)
-  pred_Theta_genotype <- Learn.MHN(pD, lambda = gamma/subsample_size)
+  
+  if (tree_obj$n < 20) {
+    pD <- genotypes_to_pD(subsample_trees)
+    pred_Theta_genotype <- Learn.MHN(pD, lambda = gamma/subsample_size)
+  } else {
+    pred_Theta_genotype <- NULL
+  }
+  
   return(list(pred_Theta, pred_Theta_genotype))
 }
 
@@ -79,7 +85,7 @@ run_once <- function(n = 10, N = 500, final_gamma = 1, s = 0.5, er = 0.5, mc = 5
                      m = 300, norder = 4, iter = 500, i = 1, nsubsampling = 200,
                      v = 1, gamma_list = "c(0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3)",
                      ncores = 100, thr = 0.95) {
-
+  
   # Generate trees
   set.seed((i + N)*n + v) # seed for the trees
   tree_obj <- generate_trees(n = n, N = N, sparsity = s, exclusive_ratio = er)
@@ -88,47 +94,55 @@ run_once <- function(n = 10, N = 500, final_gamma = 1, s = 0.5, er = 0.5, mc = 5
   gamma_list <- eval(parse(text = gamma_list)) # penalty levels
   nr_gammas <- length(gamma_list) # number of penalty levels
   subsample_size <- floor(N/2)
-
+  
   # list to store items
   res <- list()
   res$tree_obj <- tree_obj
-  res$pD <- genotypes_to_pD(trees)
   res$gamma_list <- gamma_list
-
+  res$pD <- genotypes_to_pD(trees)
+  
   # run through all penalty values
   pred_Thetas <- array(0, dim = c(nr_gammas, n, n))
-  pred_Thetas_genotype <- array(0, dim = c(nr_gammas, n, n))
   pred_Thetas_w_SS <- array(0, dim = c(nr_gammas, n, n))
-  pred_Thetas_genotype_w_SS <- array(0, dim = c(nr_gammas, n, n))
-
+  pred_Thetas_genotype <- array(0, dim = c(nr_gammas, n, n))
+  if (n < 20) {
+    pred_Thetas_genotype_w_SS <- array(0, dim = c(nr_gammas, n, n))
+  } else {
+    pred_Thetas_genotype_w_SS <- NULL
+  }
+  
+  
   for (i in c(1:nr_gammas)) {
-
+    
     gamma <- res$gamma_list[i]
-
+    
     ## without stability selection
     pred_Thetas[i,,] <- learn_MHN(tree_obj, gamma = gamma) #TreeMHN wo SS
     pred_Thetas_genotype[i,,] <- Learn.MHN(res$pD, lambda = gamma/N) #MHN wo SS
-
+    
     ## with stability selection
     SS_res <- mclapply(c(1:nsubsampling),
                        function(i) subsample_once(subsample_size, tree_obj, gamma),
                        mc.cores = ncores,
                        mc.preschedule = FALSE)
-
+    
     TreeMHN_to_mask <- get_mask(n, SS_res, 1, thr)
     pred_Thetas_w_SS[i,,] <- learn_MHN(tree_obj, gamma = final_gamma, to_mask = TreeMHN_to_mask)
-    MHN_to_mask <- get_mask(n, SS_res, 2, thr)
-    pred_Thetas_genotype_w_SS[i,,] <- Learn.MHN(res$pD, lambda = final_gamma/N, to_mask = MHN_to_mask)
-
+    
+    if (n < 20) {
+      MHN_to_mask <- get_mask(n, SS_res, 2, thr)
+      pred_Thetas_genotype_w_SS[i,,] <- Learn.MHN(res$pD, lambda = final_gamma/N, to_mask = MHN_to_mask)
+    }
+    
   }
-
+  
   res$pred_Thetas <- pred_Thetas
   res$pred_Thetas_genotype <- pred_Thetas_genotype
   res$pred_Thetas_w_SS <- pred_Thetas_w_SS
   res$pred_Thetas_genotype_w_SS <- pred_Thetas_genotype_w_SS
-
+  
   return(res)
-
+  
 }
 
 res <- run_once(n = opt$mutations, N = opt$samples,

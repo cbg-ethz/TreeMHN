@@ -71,9 +71,46 @@ plot_precision_recall <- function(n, N, s = 0.5, er = 0.5,
   
 }
 
-# Plot precision recall curves
-plot_precision_recall(n = 10, N = 500, mytitle = "n = 10, N = 500", top_mutations = TRUE)
-plot_precision_recall(n = 10, N = 500, mytitle = "n = 10, N = 500", top_mutations = FALSE)
+# Plot precision recall curves (only top half of mutations ranked by baseline rate)
+g1 <- plot_precision_recall(n = 10, N = 100, mytitle = "n = 10, N = 100", top_mutations = TRUE)
+g2 <- plot_precision_recall(n = 10, N = 200, mytitle = "n = 10, N = 200", top_mutations = TRUE)
+g3 <- plot_precision_recall(n = 10, N = 300, mytitle = "n = 10, N = 300", top_mutations = TRUE)
+g4 <- plot_precision_recall(n = 10, N = 500, mytitle = "n = 10, N = 500", top_mutations = TRUE)
+g5 <- plot_precision_recall(n = 15, N = 100, mytitle = "n = 15, N = 100", top_mutations = TRUE)
+g6 <- plot_precision_recall(n = 15, N = 200, mytitle = "n = 15, N = 200", top_mutations = TRUE)
+g7 <- plot_precision_recall(n = 15, N = 300, mytitle = "n = 15, N = 300", top_mutations = TRUE)
+g8 <- plot_precision_recall(n = 15, N = 500, mytitle = "n = 15, N = 500", top_mutations = TRUE)
+g9 <- plot_precision_recall(n = 20, N = 100, mytitle = "n = 20, N = 100", top_mutations = TRUE)
+g10 <- plot_precision_recall(n = 20, N = 200, mytitle = "n = 20, N = 200", top_mutations = TRUE)
+g11 <- plot_precision_recall(n = 20, N = 300, mytitle = "n = 20, N = 300", top_mutations = TRUE)
+g12 <- plot_precision_recall(n = 20, N = 500, mytitle = "n = 20, N = 500", top_mutations = TRUE)
+
+fig <- ggarrange(g1, g2, g3, g4,
+                 g5, g6, g7, g8,
+                 g9, g10, g11, g12,
+                 nrow = 3, ncol = 4, common.legend = TRUE, legend = "top")
+annotate_figure(fig, left = "Precision", bottom = "Recall")
+
+# Plot precision recall curves (all mutations)
+g1 <- plot_precision_recall(n = 10, N = 100, mytitle = "n = 10, N = 100", top_mutations = FALSE)
+g2 <- plot_precision_recall(n = 10, N = 200, mytitle = "n = 10, N = 200", top_mutations = FALSE)
+g3 <- plot_precision_recall(n = 10, N = 300, mytitle = "n = 10, N = 300", top_mutations = FALSE)
+g4 <- plot_precision_recall(n = 10, N = 500, mytitle = "n = 10, N = 500", top_mutations = FALSE)
+g5 <- plot_precision_recall(n = 15, N = 100, mytitle = "n = 15, N = 100", top_mutations = FALSE)
+g6 <- plot_precision_recall(n = 15, N = 200, mytitle = "n = 15, N = 200", top_mutations = FALSE)
+g7 <- plot_precision_recall(n = 15, N = 300, mytitle = "n = 15, N = 300", top_mutations = FALSE)
+g8 <- plot_precision_recall(n = 15, N = 500, mytitle = "n = 15, N = 500", top_mutations = FALSE)
+g9 <- plot_precision_recall(n = 20, N = 100, mytitle = "n = 20, N = 100", top_mutations = FALSE)
+g10 <- plot_precision_recall(n = 20, N = 200, mytitle = "n = 20, N = 200", top_mutations = FALSE)
+g11 <- plot_precision_recall(n = 20, N = 300, mytitle = "n = 20, N = 300", top_mutations = FALSE)
+g12 <- plot_precision_recall(n = 20, N = 500, mytitle = "n = 20, N = 500", top_mutations = FALSE)
+
+fig <- ggarrange(g1, g2, g3, g4,
+                 g5, g6, g7, g8,
+                 g9, g10, g11, g12,
+                 nrow = 3, ncol = 4, common.legend = TRUE, legend = "top")
+annotate_figure(fig, left = "Precision", bottom = "Recall")
+
 
 ##################### Pathway KL/Runtime/Memory #######################
 
