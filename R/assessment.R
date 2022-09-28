@@ -168,6 +168,23 @@ KL_divergence <- function(p, q) {
   return(as.numeric(p %*% log(p) - p %*% log(q)))
 }
 
+
+transitive_closure <- function(AM) {
+  diag(AM) <- 1
+  repeat {
+    new_AM <- AM %*% AM
+    new_AM <- (new_AM > 0) * 1
+    if (all(new_AM == AM)) {
+      break
+    } else {
+      AM <- new_AM
+    }
+  }
+  diag(AM) <- 0
+  return(AM)
+}
+
+
 ##' trees_to_revolver_W(n, tree_df)
 ##' This function computes the row-normalized W matrix of the REVOLVER algorithm
 ##' @param n Number of mutational events
@@ -183,13 +200,22 @@ KL_divergence <- function(p, q) {
 ##' @author Xiang Ge Luo
 trees_to_revolver_W <- function(n, tree_df) {
 
+  N <- length(unique(tree_df$Tree_ID))
   W <- matrix(0, nrow = n + 1, ncol = n + 1) # This matrix contains also the wild type (GL)
 
   # Go through all trees and count the edge frequencies
-  for (i in c(1:nrow(tree_df))) {
-    idx <- which((tree_df$Tree_ID == tree_df$Tree_ID[i]) & (tree_df$Node_ID == tree_df$Parent_ID[i]))
-    pa <- tree_df$Mutation_ID[idx]
-    W[pa + 1, tree_df$Mutation_ID[i] + 1] <- W[pa + 1, tree_df$Mutation_ID[i] + 1] + 1
+  for (i in c(1:N)) {
+    subtree_df <- tree_df %>% filter(Tree_ID == i)
+    AM_i <- matrix(0, nrow = n + 1, ncol = n + 1)
+    
+    for (j in c(2:nrow(subtree_df))) {
+      parent <- subtree_df$Parent_ID[j]
+      parent <- subtree_df$Mutation_ID[which(subtree_df$Node_ID == parent)] + 1
+      child <- subtree_df$Mutation_ID[j] + 1
+      AM_i[parent, child] <- 1
+    }
+    
+    W <- W + transitive_closure(AM_i)
   }
 
   W <- W + 1 # add pseudocounts
@@ -199,6 +225,7 @@ trees_to_revolver_W <- function(n, tree_df) {
   return(W)
 
 }
+
 
 ##' @name get_revolver_pathways
 ##' @title Compute REVOLVER pathway probabilities
