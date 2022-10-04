@@ -154,104 +154,226 @@ get_pathwayKL_runtime_memory <- function(method = NULL, n = 10, N = 500, s = 0.5
   
 }
 
-all_info_df <- rbind(get_pathwayKL_runtime_memory("Baseline_MHN", 10, 200),
-                     get_pathwayKL_runtime_memory("TreeMHN_MLE", 10, 200),
-                     get_pathwayKL_runtime_memory("TreeMHN_MCEM", 10, 200),
-                     get_pathwayKL_runtime_memory("Others", 10, 200),
-                     get_pathwayKL_runtime_memory("Baseline_MHN", 10, 300),
-                     get_pathwayKL_runtime_memory("TreeMHN_MLE", 10, 300),
-                     get_pathwayKL_runtime_memory("TreeMHN_MCEM", 10, 300),
-                     get_pathwayKL_runtime_memory("Others", 10, 300),
-                     get_pathwayKL_runtime_memory("Baseline_MHN", 10, 500),
-                     get_pathwayKL_runtime_memory("TreeMHN_MLE", 10, 500),
-                     get_pathwayKL_runtime_memory("TreeMHN_MCEM", 10, 500),
-                     get_pathwayKL_runtime_memory("Others", 10, 500))
+plot_pathway_KL <- function(n) {
+  
+  all_info_df <- rbind(get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 100),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 100),
+                       get_pathwayKL_runtime_memory("Others", n, 100),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 200),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 200),
+                       get_pathwayKL_runtime_memory("Others", n, 200),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 300),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 300),
+                       get_pathwayKL_runtime_memory("Others", n, 300),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 500),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 500),
+                       get_pathwayKL_runtime_memory("Others", n, 500))
+  
+  if (n <= 20) {
+    all_info_df <- rbind(all_info_df,
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 100),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 200),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 300),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 500))
+  }
+  
+  # Take the minimum of "TreeMHN_MLE" and "TreeMHN_MCEM" to get "TreeMHN" pathway KL
+  # (They are actually quite similar though...)
+  temp <- all_info_df %>% 
+    filter(Method %in% c("TreeMHN_MLE", "TreeMHN_MCEM")) %>% 
+    group_by(Sample, n, N) %>% 
+    summarise(Pathway_KL = min(Pathway_KL)) %>%
+    mutate(Runtime = 0, Memory = 0, Method = "TreeMHN") %>%
+    arrange(Sample, Pathway_KL, Runtime, Memory, Method, n, N)
+  
+  all_info_df <- bind_rows(all_info_df, temp) %>% select(!Sample)
+  
+  if (n <= 20) {
+    g <- all_info_df %>%
+      filter(Method %in% c("TreeMHN", 
+                           "Baseline_MHN",
+                           "REVOLVER",
+                           "HINTRA"),
+             n == n) %>%
+      mutate(Method = fct_relevel(Method, 
+                                  "TreeMHN", 
+                                  "Baseline_MHN",
+                                  "REVOLVER",
+                                  "HINTRA")) %>%
+      ggplot(mapping = aes(x = factor(N), y = Pathway_KL, fill = Method)) +
+      geom_boxplot() + xlab("") + ylab("") + ylim(c(0, 5)) +
+      scale_fill_manual(values = c("#CC99FF",
+                                   "#FFB266",
+                                   "#CCFF99",
+                                   "#99CCFF"), 
+                        labels = c("TreeMHN", 
+                                   "Genotype MHN",
+                                   "REVOLVER",
+                                   "HINTRA")) +
+      labs(title = paste0("n = ", n)) +
+      theme(legend.text=element_text(size=12)) +
+      ylab("Trajectory KL divergence") +
+      xlab("Sample Size N")
+  } else {
+    g <- all_info_df %>%
+      filter(Method %in% c("TreeMHN",
+                           "REVOLVER",
+                           "HINTRA"),
+             n == n) %>%
+      mutate(Method = fct_relevel(Method, 
+                                  "TreeMHN",
+                                  "REVOLVER",
+                                  "HINTRA")) %>%
+      ggplot(mapping = aes(x = factor(N), y = Pathway_KL, fill = Method)) +
+      geom_boxplot() + xlab("") + ylab("") + ylim(c(0, 5)) +
+      scale_fill_manual(values = c("#CC99FF",
+                                   "#CCFF99",
+                                   "#99CCFF"), 
+                        labels = c("TreeMHN",
+                                   "REVOLVER",
+                                   "HINTRA")) +
+      labs(title = paste0("n = ", n)) +
+      theme(legend.text=element_text(size=12)) +
+      ylab("Trajectory KL divergence") +
+      xlab("Sample Size N")
+  }
+  
+  return(g)
+  
+}
 
-# Take the minimum of "TreeMHN_MLE" and "TreeMHN_MCEM" to get "TreeMHN" pathway KL
-# (They are actually quite similar though...)
-temp <- all_info_df %>% 
-  filter(Method %in% c("TreeMHN_MLE", "TreeMHN_MCEM")) %>% 
-  group_by(Sample, n, N) %>% 
-  summarise(Pathway_KL = min(Pathway_KL)) %>%
-  mutate(Runtime = 0, Memory = 0, Method = "TreeMHN") %>%
-  arrange(Sample, Pathway_KL, Runtime, Memory, Method, n, N)
+plot_runtime <- function(n) {
+  
+  all_info_df <- rbind(get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 100),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 100),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 200),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 200),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 300),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 300),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 500),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 500))
+  
+  if (n <= 20) {
+    all_info_df <- rbind(all_info_df,
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 100),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 200),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 300),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 500))
+  }
+  
+  
+  g <- all_info_df %>%
+    filter(Method %in% c("TreeMHN_MLE",
+                         "TreeMHN_MCEM",
+                         "Baseline_MHN"),
+           n == n) %>%
+    mutate(Method = fct_relevel(Method, 
+                                "TreeMHN_MLE",
+                                "TreeMHN_MCEM",
+                                "Baseline_MHN")) %>%
+    ggplot(mapping = aes(x = factor(N), y = Runtime, fill = Method)) +
+    geom_boxplot() + xlab("") + ylab("") +
+    scale_fill_manual(values = c("#FF66B2", "#CC99FF", "#FFB266"),
+                      labels = c("TreeMHN (MLE)",
+                                 "TreeMHN (MC-EM)",
+                                 "Genotype MHN")) +
+    scale_y_log10(limits = c(1, 1e5)) +
+    labs(title = paste0("n = ", n)) +
+    theme(legend.text=element_text(size=12)) +
+    ylab("Runtime (seconds)") +
+    xlab("Sample Size N")
+  
+  return(g)
+  
+}
 
-all_info_df <- bind_rows(all_info_df, temp) %>% select(!Sample)
+
+plot_memory <- function(n) {
+  
+  all_info_df <- rbind(get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 100),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 100),
+                       get_pathwayKL_runtime_memory("Others", n, 100),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 200),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 200),
+                       get_pathwayKL_runtime_memory("Others", n, 200),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 300),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 300),
+                       get_pathwayKL_runtime_memory("Others", n, 300),
+                       get_pathwayKL_runtime_memory("TreeMHN_MLE", n, 500),
+                       get_pathwayKL_runtime_memory("TreeMHN_MCEM", n, 500),
+                       get_pathwayKL_runtime_memory("Others", n, 500))
+  
+  if (n <= 20) {
+    all_info_df <- rbind(all_info_df,
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 100),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 200),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 300),
+                         get_pathwayKL_runtime_memory("Baseline_MHN", n, 500))
+  }
+  
+  g <- all_info_df %>%
+    filter(Method %in% c("TreeMHN_MLE",
+                         "TreeMHN_MCEM",
+                         "Baseline_MHN"),
+           n == n) %>%
+    mutate(Method = fct_relevel(Method, 
+                                "TreeMHN_MLE",
+                                "TreeMHN_MCEM",
+                                "Baseline_MHN")) %>%
+    ggplot(mapping = aes(x = factor(N), y = Memory, fill = Method)) +
+    geom_boxplot() + xlab("") + ylab("") +
+    scale_fill_manual(values = c("#FF66B2", "#CC99FF", "#FFB266"),
+                      labels = c("TreeMHN (MLE)",
+                                 "TreeMHN (MC-EM)",
+                                 "Genotype MHN")) +
+    scale_y_log10(limits = c(1, 1e7)) +
+    labs(title = paste0("n = ", n)) +
+    theme(legend.text=element_text(size=12)) +
+    ylab("Memory (MiB)") +
+    xlab("Sample Size N")
+  
+  return(g)
+  
+}
+
 
 # Plot pathway KL
-all_info_df %>%
-  filter(Method %in% c("TreeMHN", 
-                       "Baseline_MHN",
-                       "REVOLVER",
-                       "HINTRA"),
-         n == 10) %>%
-  mutate(Method = fct_relevel(Method, 
-                              "TreeMHN", 
-                              "Baseline_MHN",
-                              "REVOLVER",
-                              "HINTRA")) %>%
-  ggplot(mapping = aes(x = factor(N), y = Pathway_KL, fill = Method)) +
-  geom_boxplot() + xlab("") + ylab("") + ylim(c(0, 4)) +
-  scale_fill_manual(values = c("#CC99FF",
-                               "#FFB266",
-                               "#CCFF99",
-                               "#99CCFF"), 
-                    labels = c("TreeMHN", 
-                               "Genotype MHN",
-                               "REVOLVER",
-                               "HINTRA")) +
-  labs(title = "n = 10") +
-  theme(legend.text=element_text(size=12)) +
-  ylab("Pathway KL divergence") +
-  xlab("Sample Size N")
+g1 <- plot_pathway_KL(10)
+g2 <- plot_pathway_KL(15)
+g3 <- plot_pathway_KL(20)
+g4 <- plot_pathway_KL(30)
+
+g <- ggarrange(g1 + rremove("xlab") + rremove("ylab"),
+               g2 + rremove("xlab") + rremove("ylab"), 
+               g3 + rremove("xlab") + rremove("ylab"), 
+               g4 + rremove("xlab") + rremove("ylab"), 
+               nrow = 1, ncol = 4, common.legend = TRUE, legend = "top")
+annotate_figure(g, left = text_grob("Trajectory KL divergence", size= 12, rot = 90), 
+                bottom = text_grob("Sample size N",size=12))
 
 # Plot runtime
-runtime_min <- min(all_info_df$Runtime[all_info_df$Runtime > 0])
-runtime_max <- max(all_info_df$Runtime)
-
-all_info_df %>%
-  filter(Method %in% c("TreeMHN_MLE",
-                       "TreeMHN_MCEM",
-                       "Baseline_MHN"),
-         n == 10) %>%
-  mutate(Method = fct_relevel(Method, 
-                              "TreeMHN_MLE",
-                              "TreeMHN_MCEM",
-                              "Baseline_MHN")) %>%
-  ggplot(mapping = aes(x = factor(N), y = Runtime, fill = Method)) +
-  geom_boxplot() + xlab("") + ylab("") +
-  scale_fill_manual(values = c("#FF66B2", "#CC99FF", "#FFB266"),
-                    labels = c("TreeMHN (MLE)",
-                               "TreeMHN (MC-EM)",
-                               "Genotype MHN")) +
-  scale_y_log10(limits = c(runtime_min, runtime_max)) +
-  labs(title = "n = 10") +
-  theme(legend.text=element_text(size=12)) +
-  ylab("Runtime (seconds)") +
-  xlab("Sample Size N")
+g1 <- plot_runtime(10)
+g2 <- plot_runtime(15)
+g3 <- plot_runtime(20)
+g4 <- plot_runtime(30)
+fig <- ggarrange(g1 + rremove("xlab") + rremove("ylab"), 
+                 g2 + rremove("xlab") + rremove("ylab"), 
+                 g3 + rremove("xlab") + rremove("ylab"), 
+                 g4 + rremove("xlab") + rremove("ylab"), 
+                 ncol = 4, nrow = 1, common.legend = TRUE, legend = "top")
+G1 <- annotate_figure(fig, left = "Runtime (seconds)")
 
 # Plot memory
-Memory_min <- min(all_info_df$Memory[all_info_df$Memory > 0])
-Memory_max <- max(all_info_df$Memory)
+g1 <- plot_memory(10)
+g2 <- plot_memory(15)
+g3 <- plot_memory(20)
+g4 <- plot_memory(30)
+fig <- ggarrange(g1 + rremove("xlab") + rremove("ylab"), 
+                 g2 + rremove("xlab") + rremove("ylab"), 
+                 g3 + rremove("xlab") + rremove("ylab"), 
+                 g4 + rremove("xlab") + rremove("ylab"), 
+                 ncol = 4, nrow = 1, common.legend = TRUE, legend = "none")
+G2 <- annotate_figure(fig, left = "Memory (MiB)", bottom = "Sample size N")
 
-all_info_df %>%
-  filter(Method %in% c("TreeMHN_MLE",
-                       "TreeMHN_MCEM",
-                       "Baseline_MHN"),
-         n == 10) %>%
-  mutate(Method = fct_relevel(Method, 
-                              "TreeMHN_MLE",
-                              "TreeMHN_MCEM",
-                              "Baseline_MHN")) %>%
-  ggplot(mapping = aes(x = factor(N), y = Memory, fill = Method)) +
-  geom_boxplot() + xlab("") + ylab("") +
-  scale_fill_manual(values = c("#FF66B2", "#CC99FF", "#FFB266"),
-                    labels = c("TreeMHN (MLE)",
-                               "TreeMHN (MC-EM)",
-                               "Genotype MHN")) +
-  scale_y_log10(limits = c(Memory_min, Memory_max)) +
-  labs(title = "n = 10") +
-  theme(legend.text=element_text(size=12)) +
-  ylab("Memory (MiB)") +
-  xlab("Sample Size N")
-
+# Putting together
+ggarrange(G1, G2, ncol = 1, nrow = 2)

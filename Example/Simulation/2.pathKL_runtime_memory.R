@@ -21,7 +21,7 @@ option_list <- list(
               help = "Length of the pathways [default %default]"),
   make_option(c("--iter"), action = "store", type = "integer", default = 500,
               help = "Number of EM iterations [default %default]"),
-  make_option(c("--method"), default = "TreeMHN",
+  make_option(c("--method"), default = "TreeMHN_MLE",
               help = "Inference method: \n
               1. TreeMHN_MLE [default];\n
               2. TreeMHN_MCEM;\n
@@ -44,11 +44,11 @@ opt <- parse_args(OptionParser(option_list=option_list))
 # Function to get one simulation run
 run_once <- function(n = 10, N = 500, gamma = 1, s = 0.5, er = 0.5, mc = 50, 
                      m = 300, norder = 4, iter = 500, i = 1, method = "TreeMHN_MLE", 
-                     v = 1) {
+                     v = 1, verbose = TRUE) {
   
   # Generate trees
   set.seed((i + N)*n + v) # seed for the trees
-  tree_obj <- generate_trees(n = n, N = N, sparsity = s, exclusive_ratio = er)
+  tree_obj <- generate_trees(n = n, N = N, sparsity = s, exclusive_ratio = er, largest_tree_size = floor(n/2))
   true_Theta <- tree_obj$Theta # true MHN
   trees <- tree_obj$trees # extract trees
   true_p <- Theta_to_pathways(true_Theta)
@@ -59,7 +59,8 @@ run_once <- function(n = 10, N = 500, gamma = 1, s = 0.5, er = 0.5, mc = 50,
            
            cat("TreeMHN (MLE) starts\n")
            start_time <- Sys.time()
-           p <- profmem({Theta_TreeMHN_MLE <- learn_MHN(tree_obj, gamma = gamma, MC_threshold = 10000)})
+           p <- profmem({Theta_TreeMHN_MLE <- learn_MHN(tree_obj, gamma = gamma, 
+                                                        MC_threshold = 10000, verbose = verbose)})
            end_time <- Sys.time()
            
            res <- list(Theta_TreeMHN_MLE = Theta_TreeMHN_MLE,
@@ -76,7 +77,8 @@ run_once <- function(n = 10, N = 500, gamma = 1, s = 0.5, er = 0.5, mc = 50,
            cat("TreeMHN (MCEM) starts\n")
            start_time <- Sys.time()
            p <- profmem({Theta_TreeMHN_MCEM <- learn_MHN(tree_obj, gamma = gamma, use_EM = TRUE, 
-                                                         MC_threshold = mc, M = m, iterations = iter)})
+                                                         MC_threshold = mc, M = m, iterations = iter,
+                                                         verbose = verbose)})
            end_time <- Sys.time()
            
            res <- list(Theta_TreeMHN_MCEM = Theta_TreeMHN_MCEM,
@@ -94,7 +96,7 @@ run_once <- function(n = 10, N = 500, gamma = 1, s = 0.5, er = 0.5, mc = 50,
            pD <- genotypes_to_pD(trees)
            cat("Baseline MHN starts\n")
            start_time <- Sys.time()
-           p <- profmem({Theta_baseline_MHN <- Learn.MHN(pD, lambda = gamma/N)})
+           p <- profmem({Theta_baseline_MHN <- Learn.MHN(pD, lambda = gamma/N, maxit = 1000)})
            end_time <- Sys.time()
            
            res <- list(Theta_baseline_MHN = Theta_baseline_MHN,
@@ -138,7 +140,7 @@ all_res <- mclapply(c(1:opt$ncores),
                                          er = opt$er, mc = opt$mc, 
                                          m = opt$mcsamples, norder = opt$norder,
                                          iter = opt$iter, i = i, method = opt$method, 
-                                         v = opt$version), 
+                                         v = opt$version, verbose = opt$verbose), 
                     mc.cores = opt$ncores,
                     mc.preschedule = FALSE)
 
