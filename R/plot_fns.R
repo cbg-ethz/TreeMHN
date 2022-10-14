@@ -472,6 +472,7 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1,
 ##' @importFrom gridExtra grid.arrange
 ##' @importFrom reshape2 melt
 ##' @importFrom grDevices colors
+##' @importFrom ggpubr annotate_figure
 ##' @export
 plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, to_show = NULL) {
   
@@ -519,6 +520,8 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
             axis.title.x=element_blank(),
             axis.title.y=element_blank())
     
+    g1 <- annotate_figure(g1, bottom = text_grob("Baseline rates"))
+    
     g2 <- melt(Theta_no_diag[idx, idx]) %>%
       ggplot(aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) +
@@ -526,9 +529,10 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
       scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
       theme(axis.text.x=element_text(angle=45, hjust = 0.2, vjust = 0.1),
             axis.ticks=element_blank(),
-            legend.title = element_blank(),
-            axis.title.x=element_blank(),
-            axis.title.y=element_blank())
+            legend.title = element_blank()) +
+      xlab("ancestor") + ylab("descendant")
+    
+    g2 <- annotate_figure(g2, bottom = text_grob("Pattern of exclusivity and co-occurrence"))
     
     G <- grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(2,6))
     
@@ -576,6 +580,8 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
             axis.title.x=element_blank(),
             axis.title.y=element_blank())
     
+    g1 <- annotate_figure(g1, bottom = text_grob("Baseline rates"))
+    
     g2 <- ggplot(to_show_no_diag, aes(x = Var2, y = Var1)) + 
       geom_raster(aes(fill=value)) + 
       geom_label(data = to_show_no_diag %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
@@ -587,9 +593,13 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
       theme(axis.text.x=element_blank(),
             axis.text.y=element_blank(),
             axis.ticks=element_blank(),
-            legend.title = element_blank(),
-            axis.title.x=element_blank(),
-            axis.title.y=element_blank())
+            legend.title = element_blank()) +
+      xlab("ancestor") + ylab("descendant")
+    
+    # + theme(plot.background = element_rect(color = "white", fill = "lightgrey"),
+    #         legend.background = element_rect(fill = "lightgrey"))
+    
+    g2 <- annotate_figure(g2, bottom = text_grob("Pattern of exclusivity and co-occurrence"))
     
     G <- grid.arrange(g1, g2, ncol = 2, nrow = 1, widths = c(1,4))
   }
