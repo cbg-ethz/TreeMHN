@@ -1,4 +1,7 @@
-# TreeMHN
+<div align="left">
+  <img src="https://github.com/cbg-ethz/TreeMHN/blob/main/figures/TreeMHN_Logo.png", width="400px">
+</div>
+<p></p>
 
 This package implements the TreeMHN model for the Joint inference of exclusivity patterns and recurrent trajectories from tumor mutation trees. ([bioRxiv preprint](https://doi.org/10.1101/2021.11.04.467347))
 
