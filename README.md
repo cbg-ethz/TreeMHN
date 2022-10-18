@@ -19,7 +19,7 @@ Then, create `~/.R/Makevars` with entry
 CXX=$(brew --prefix)/bin/g++-[INSTALLED VERSION]
 ```
 
-In R, install the `devtools` package and run
+For all users, install the `devtools` package in R and run
 
 ```
 devtools::install_github("cbg-ethz/TreeMHN")
