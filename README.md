@@ -3,7 +3,7 @@
 </div>
 <p></p>
 
-This package implements the TreeMHN model for the Joint inference of exclusivity patterns and recurrent trajectories from tumor mutation trees. ([bioRxiv preprint](https://doi.org/10.1101/2021.11.04.467347))
+This package implements the TreeMHN model for the joint inference of exclusivity patterns and recurrent trajectories from tumor mutation trees. ([bioRxiv preprint](https://doi.org/10.1101/2021.11.04.467347))
 
 ## Installation
 
