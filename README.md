@@ -4,16 +4,16 @@ This package implements the TreeMHN model for the Joint inference of exclusivity
 
 ## Installation
 
-For Mac users, please compile the package with g++ instead of clang by installing gcc using [Homebrew](https://formulae.brew.sh/formula/gcc)
+For Mac users, please compile the package with g++ instead of clang. To do this, you need to first install gcc using [Homebrew](https://formulae.brew.sh/formula/gcc):
 
 ```
 brew install gcc
 ```
 
-and creating `~/.R/Makevars` with entry
+Then, create `~/.R/Makevars` with entry
 
 ```
-CXX=g++-11
+CXX=$(brew --prefix)/bin/g++-[INSTALLED VERSION]
 ```
 
 In R, install the `devtools` package and run
