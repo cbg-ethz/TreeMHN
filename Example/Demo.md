@@ -98,7 +98,7 @@ get_mask <- function(n, SS_res, thr = 0.95) {
 ```
 
 It is recommended to run the stability selection procedure using the
-`parallel` package.
+`parallel` package (runtime up to 10 min depending on the number of cores available).
 
 ``` r
 SS_res <- mclapply(c(1:1000), 
@@ -250,7 +250,8 @@ function. For example,
 To ensure enough precision, we run stability selection with
 \(\gamma = 0.1\) and a threshold of \(95\%\) and obtain a vector of
 non-selected elements over \(1000\) subsamples. Again, we recommend to
-run the code using the `parallel` package on a cluster.
+run the code using the `parallel` package on a cluster (runtime up to 20 min 
+depending on the number of cores available).
 
 ``` r
 RNGkind("L'Ecuyer-CMRG")
