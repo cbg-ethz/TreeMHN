@@ -510,7 +510,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
     
     g1 <- melt(Theta_diag) %>%
       ggplot(aes(x = Var2, y = Var1)) + 
-      geom_raster(aes(fill=value)) +
+      geom_tile(aes(fill=value)) +
       scale_fill_gradient(low = "white", high = colors()[77], 
                           labels = function(x) sprintf("%.1f", round(x, 1))) +
       scale_y_discrete(limits=rev) +
@@ -524,7 +524,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
     
     g2 <- melt(Theta_no_diag[idx, idx]) %>%
       ggplot(aes(x = Var2, y = Var1)) + 
-      geom_raster(aes(fill=value)) +
+      geom_tile(aes(fill=value)) +
       scale_fill_gradient2(labels = function(x) sprintf("%.1f", round(x, 1))) +
       scale_y_discrete(limits=rev) + scale_x_discrete(position = "top") +
       theme(axis.text.x=element_text(angle=45, hjust = 0.2, vjust = 0.1),
@@ -570,7 +570,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
     
     g1 <- melt(to_show_diag) %>%
       ggplot(aes(x = Var2, y = Var1)) + 
-      geom_raster(aes(fill=value)) +
+      geom_tile(aes(fill=value)) +
       scale_fill_gradient(low = "white", high = colors()[77], 
                           labels = function(x) sprintf("%.1f", round(x, 1))) +
       scale_y_discrete(limits=rev) +
@@ -583,7 +583,7 @@ plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, t
     g1 <- annotate_figure(g1, bottom = text_grob("Baseline rates"))
     
     g2 <- ggplot(to_show_no_diag, aes(x = Var2, y = Var1)) + 
-      geom_raster(aes(fill=value)) + 
+      geom_tile(aes(fill=value)) + 
       geom_label(data = to_show_no_diag %>% mutate(text = ifelse(Var1 == Var2, as.character(Var2), NA)) %>% filter(!is.na(text)),
                  mapping = aes(label = text), 
                  size = 2.5,
