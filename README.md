@@ -43,3 +43,5 @@ For all users, install the `devtools` package in R and run
 devtools::install_github("cbg-ethz/TreeMHN")
 ```
 
+The installation typically takes around one minute to finish.
+
