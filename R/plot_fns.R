@@ -472,7 +472,7 @@ plot_observed_pathways <- function(tree_obj, Theta, top_M = 10, lambda_s = 1,
 ##' @importFrom gridExtra grid.arrange
 ##' @importFrom reshape2 melt
 ##' @importFrom grDevices colors
-##' @importFrom ggpubr annotate_figure
+##' @importFrom ggpubr annotate_figure text_grob
 ##' @export
 plot_Theta <- function(Theta, mutations = NULL, full = TRUE, sort_diag = TRUE, to_show = NULL) {
   

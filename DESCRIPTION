@@ -7,7 +7,7 @@ Maintainer: Xiang Ge Luo <xiangge.luo@bsse.ethz.ch>
 Description: Joint inference of repeated evolutionary trajectories and patterns of clonal exclusivity from single-cell mutation trees.
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.3
 LinkingTo: 
     Rcpp,
     RcppArmadillo
