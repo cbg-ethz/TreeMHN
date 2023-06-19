@@ -154,12 +154,12 @@ List get_augmented_trees(int n, const List &trees) {
   List augmented_trees {};
   for (int i {0}; i < trees.length(); ++i) {
     List tree = trees.at(i);
-    // Remove duplicated nodes in the tree
-    int changed {0};
-    do {
-      changed = 0;
-      remove_duplicates(tree, changed);
-    } while (changed > 0);
+    // // Remove duplicated nodes in the tree
+    // int changed {0};
+    // do {
+    //   changed = 0;
+    //   remove_duplicates(tree, changed);
+    // } while (changed > 0);
     
     // Convert from T to A(T)
     std::vector<int> mut_indices(n);

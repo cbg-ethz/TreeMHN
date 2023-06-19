@@ -1,4 +1,3 @@
-
 ##' @name input_tree_df
 ##' @title Process a dataframe of mutation trees and output a TreeMHN object
 ##' @description  This function processes a dataframe of mutation trees and output a TreeMHN object.
@@ -23,14 +22,13 @@
 ##' @return A TreeMHN object
 ##' @author Xiang Ge Luo
 ##' @export
-input_tree_df <- function(n, tree_df, patients = NULL, tree_labels = NULL, 
+input_tree_df <- function(n, tree_df, patients = NULL, tree_labels = NULL,
                           mutations = NULL, weights = NULL) {
-
   # Check input format
-  if (length(setdiff(colnames(tree_df), c("Patient_ID","Tree_ID","Node_ID","Mutation_ID","Parent_ID"))) != 0) {
+  if (length(setdiff(colnames(tree_df), c("Patient_ID", "Tree_ID", "Node_ID", "Mutation_ID", "Parent_ID"))) != 0) {
     stop("Please check the input format of the data frame...")
   }
-  
+
   # Check patient labels
   N_patients <- length(unique(tree_df$Patient_ID))
   if (is.null(patients)) {
@@ -40,7 +38,7 @@ input_tree_df <- function(n, tree_df, patients = NULL, tree_labels = NULL,
       stop("The list of patient labels has length different from the number of patients. Please check again...")
     }
   }
-  
+
   # Check tree labels
   N <- length(unique(tree_df$Tree_ID))
   if (is.null(tree_labels)) {
@@ -50,7 +48,7 @@ input_tree_df <- function(n, tree_df, patients = NULL, tree_labels = NULL,
       stop("The list of tree labels has length different from the number of trees. Please check again...")
     }
   }
-  
+
   # Check mutation names
   if (is.null(mutations)) {
     mutations <- as.character(seq(1, n))
@@ -61,46 +59,50 @@ input_tree_df <- function(n, tree_df, patients = NULL, tree_labels = NULL,
       stop("Mutation names must be unique. Please check again...")
     }
   }
-  
+
   # Check tree weights
   if (is.null(weights)) {
-    weights <- tree_df %>% 
-      select(Patient_ID, Tree_ID) %>% 
-      distinct(Tree_ID, .keep_all = TRUE) %>% 
+    weights <- tree_df %>%
+      select(Patient_ID, Tree_ID) %>%
+      distinct(Tree_ID, .keep_all = TRUE) %>%
       group_by(Patient_ID) %>%
       mutate(temp = n()) %>%
       mutate(weights = 1 / temp) %>%
-      ungroup(Patient_ID) %>% 
+      ungroup(Patient_ID) %>%
       .$weights
   } else {
-    patient_level_weights <- tree_df %>% 
-      select(Patient_ID, Tree_ID) %>% 
+    patient_level_weights <- tree_df %>%
+      select(Patient_ID, Tree_ID) %>%
       distinct(Tree_ID, .keep_all = TRUE) %>%
-      mutate(tree_weight = weights[Tree_ID]) %>% 
+      mutate(tree_weight = weights[Tree_ID]) %>%
       group_by(Patient_ID) %>%
       summarise(tree_weight = sum(tree_weight)) %>%
       .$tree_weight
-    
+
     idx <- which(patient_level_weights != 1)
     if (length(idx) != 0) {
-      stop(paste("The tree weights of patients with ID", 
-                 paste(idx, collapse = ", "), 
-                 "do not sum to 1. Please check again..."))
+      stop(paste(
+        "The tree weights of patients with ID",
+        paste(idx, collapse = ", "),
+        "do not sum to 1. Please check again..."
+      ))
     }
   }
 
   # Convert data frame into tree format
   res <- tree_df_to_trees(n, tree_df)
 
-  tree_obj <- list("n" = n,
-                   "N" = N,
-                   "N_patients" = N_patients,
-                   "mutations" = mutations,
-                   "tree_labels" = tree_labels,
-                   "patients" = patients,
-                   "tree_df" = res$tree_df,
-                   "trees" = res$trees,
-                   "weights" = weights)
+  tree_obj <- list(
+    "n" = n,
+    "N" = N,
+    "N_patients" = N_patients,
+    "mutations" = mutations,
+    "tree_labels" = tree_labels,
+    "patients" = patients,
+    "tree_df" = res$tree_df,
+    "trees" = res$trees,
+    "weights" = weights
+  )
   return(tree_obj)
 }
 
@@ -121,11 +123,14 @@ tree_df_to_trees <- function(n, tree_df) {
   # Convert data frame into tree format
   trees <- list()
   unique_tree_IDs <- unique(tree_df$Tree_ID)
+  new_tree_df <- data.frame(matrix(ncol = 5, nrow = 0)) ## New
+  colnames(new_tree_df) <- c("Patient_ID", "Tree_ID", "Node_ID", "Mutation_ID", "Parent_ID") ## New
   for (i in c(1:length(unique_tree_IDs))) {
-
     # Ensure that the node IDs are in ascending order
-    one_tree_df <- sort_one_tree_df(tree_df[tree_df$Tree_ID == unique_tree_IDs[i],])
-    tree_df[tree_df$Tree_ID == unique_tree_IDs[i],] <- one_tree_df
+    one_tree_df <- tree_df[tree_df$Tree_ID == unique_tree_IDs[i], ]
+    one_tree_df <- remove_duplicates(one_tree_df)
+    one_tree_df <- sort_one_tree_df(one_tree_df)
+    new_tree_df <- rbind(new_tree_df, one_tree_df) ## New
 
     # Construct the tree T
     tree_to_add <- list()
@@ -142,7 +147,7 @@ tree_df_to_trees <- function(n, tree_df) {
     }
     tree_to_add$children[[1]] <- tree_to_add$children[[1]][-1]
     if (length(tree_to_add$children[[1]]) == 0) {
-      stop(paste("Tree with ID",unique_tree_IDs[i],"does not contain edges from the root. Please check again..."))
+      stop(paste("Tree with ID", unique_tree_IDs[i], "does not contain edges from the root. Please check again..."))
     }
     tree_to_add$in_tree <- rep(TRUE, nrow(one_tree_df))
 
@@ -152,7 +157,7 @@ tree_df_to_trees <- function(n, tree_df) {
   }
 
   res <- list()
-  res$tree_df <- tree_df
+  res$tree_df <- new_tree_df ## New
 
   # Construct the augmented trees A(T)
   res$trees <- get_augmented_trees(n, trees)
@@ -164,18 +169,19 @@ tree_df_to_trees <- function(n, tree_df) {
 ##' @param one_tree_df A tree data frame for a single patient/tumor
 ##' @return A sorted tree data frame
 sort_one_tree_df <- function(one_tree_df) {
-  
   repeat {
     p_vec <- one_tree_df$Parent_ID
-    one_tree_df <- one_tree_df[order(one_tree_df$Parent_ID),]
-    one_tree_df$Parent_ID <- sapply(c(1:nrow(one_tree_df)),
-                                    function (j) which(one_tree_df$Node_ID == one_tree_df$Parent_ID[j]))
+    one_tree_df <- one_tree_df[order(one_tree_df$Parent_ID), ]
+    one_tree_df$Parent_ID <- sapply(
+      c(1:nrow(one_tree_df)),
+      function(j) which(one_tree_df$Node_ID == one_tree_df$Parent_ID[j])
+    )
     one_tree_df$Node_ID <- seq(1, nrow(one_tree_df))
     if (all(p_vec == one_tree_df$Parent_ID)) {
       break
     }
   }
-  
+
   return(one_tree_df)
 }
 
@@ -184,28 +190,26 @@ sort_one_tree_df <- function(one_tree_df) {
 ##' @param tree_obj A TreeMHN object
 ##' @return A TreeMHN object with the tree data frame
 output_tree_df <- function(tree_obj) {
-
   tree_df <- data.frame(matrix(ncol = 5, nrow = 0)) ## New
 
   for (tree in tree_obj$trees) {
     tree_df <- rbind(tree_df, output_one_tree_df(tree))
   }
 
-  colnames(tree_df) <- c("Patient_ID","Tree_ID","Node_ID","Mutation_ID","Parent_ID") ## New
+  colnames(tree_df) <- c("Patient_ID", "Tree_ID", "Node_ID", "Mutation_ID", "Parent_ID") ## New
   tree_obj$tree_df <- tree_df
   return(tree_obj)
-
 }
 
 output_one_tree_df <- function(tree) {
   nr_nodes <- sum(tree$in_tree)
   patient_ID_temp <- rep(tree$patient_ID, nr_nodes) ## New
   tree_ID_temp <- rep(tree$tree_ID, nr_nodes)
-  node_ID_temp <- seq(1,length(tree$nodes))[tree$in_tree]
+  node_ID_temp <- seq(1, length(tree$nodes))[tree$in_tree]
   mutation_ID_temp <- tree$nodes[tree$in_tree]
   parent_ID_temp <- tree$parents[tree$in_tree]
-  temp_df <- cbind(patient_ID_temp,tree_ID_temp, node_ID_temp, mutation_ID_temp, parent_ID_temp) ## New
-  colnames(temp_df) <- c("Patient_ID","Tree_ID","Node_ID","Mutation_ID","Parent_ID") ## New
+  temp_df <- cbind(patient_ID_temp, tree_ID_temp, node_ID_temp, mutation_ID_temp, parent_ID_temp) ## New
+  colnames(temp_df) <- c("Patient_ID", "Tree_ID", "Node_ID", "Mutation_ID", "Parent_ID") ## New
   return(sort_one_tree_df(data.frame(temp_df)))
 }
 
@@ -224,11 +228,9 @@ output_one_tree_df <- function(tree) {
 ##' }
 ##' @return A matrix of subclonal genotypes
 tree_df_to_genotypes <- function(n, tree_df) {
-
   genotypes <- matrix(0, nrow = nrow(tree_df), ncol = n)
   check_change <- -1
   repeat {
-
     if (sum(genotypes) == check_change) {
       break
     } else {
@@ -237,11 +239,83 @@ tree_df_to_genotypes <- function(n, tree_df) {
 
     for (i in c(2:nrow(tree_df))) {
       pa_idx <- which(tree_df$Node_ID == tree_df$Parent_ID[i])
-      genotypes[i,] <- genotypes[pa_idx,]
+      genotypes[i, ] <- genotypes[pa_idx, ]
       genotypes[i, tree_df$Mutation_ID[i]] <- 1
     }
-
   }
   return(genotypes)
+}
 
+remove_duplicates <- function(tree_df) {
+  changed <- 1
+
+  while (changed) {
+    row_to_remove <- c()
+    changed <- 0
+
+    # merge duplicated children
+    for (i in c(1:nrow(tree_df))) {
+      ch_set <- which(tree_df$Parent_ID == tree_df$Node_ID[i])
+      if (length(ch_set) > 1) {
+        for (j in c(1:(length(ch_set) - 1))) {
+          ch1 <- ch_set[j]
+          for (k in c((j + 1):length(ch_set))) {
+            ch2 <- ch_set[k]
+            if (tree_df$Mutation_ID[ch1] == tree_df$Mutation_ID[ch2]) {
+              row_to_remove <- c(row_to_remove, ch2)
+              ch2_ch_set <- which(tree_df$Parent_ID == tree_df$Node_ID[ch2])
+              tree_df$Parent_ID[ch2_ch_set] <- ch1
+              changed <- 1
+            }
+          }
+        }
+      }
+    }
+
+    if (length(row_to_remove) > 0) {
+      tree_df <- tree_df[-row_to_remove, ]
+      row_to_remove <- c()
+    }
+
+    # remove repeated mutations along the same path
+    duplicates <- unique(tree_df$Mutation_ID[duplicated(tree_df$Mutation_ID)])
+    if (length(duplicates) > 0) {
+      for (i in c(1:length(duplicates))) {
+        dup <- duplicates[i]
+        dup_set <- which(tree_df$Mutation_ID == dup)
+        for (j in c(2:length(dup_set))) {
+          if (is_ancestor(
+            tree_df,
+            tree_df$Node_ID[dup_set[1]],
+            tree_df$Node_ID[dup_set[j]]
+          )) {
+            row_to_remove <- c(row_to_remove, dup_set[j])
+            ch_set <- which(tree_df$Parent_ID == tree_df$Node_ID[dup_set[j]])
+            tree_df$Parent_ID[ch_set] <- tree_df$Parent_ID[dup_set[j]]
+            changed <- 1
+          }
+        }
+      }
+    }
+
+    if (length(row_to_remove) > 0) {
+      tree_df <- tree_df[-row_to_remove, ]
+      row_to_remove <- c()
+    }
+  }
+
+  return(tree_df)
+}
+
+is_ancestor <- function(tree_df, i, j) {
+  # check if node i is an ancestor of node j
+  flag <- 0
+  while (j != 1) {
+    if (i == j) {
+      flag <- 1
+      break
+    }
+    j <- tree_df$Parent_ID[which(tree_df$Node_ID == j)]
+  }
+  return(flag)
 }
