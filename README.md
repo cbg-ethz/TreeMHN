@@ -45,3 +45,8 @@ devtools::install_github("cbg-ethz/TreeMHN")
 
 The installation typically takes around one minute to finish.
 
+
+<div align="left">
+  <img src="https://github.com/cbg-ethz/TreeMHN/blob/main/figures/Affiliations.png", width="800px">
+</div>
+<p></p>
